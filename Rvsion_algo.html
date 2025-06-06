@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RVsion - Répétition Espacée & Tests AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Styles personnalisés pour une meilleure lisibilité et esthétique */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Arrière-plan gris clair */
+        }
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 1.5rem;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .btn {
+            @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2; /* Ajout gap pour les icônes */
+        }
+        .btn-primary {
+            @apply bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800;
+        }
+        .btn-secondary {
+            @apply bg-gray-200 text-gray-800 hover:bg-gray-300 active:bg-gray-400;
+        }
+        .btn-success {
+            @apply bg-green-500 text-white hover:bg-green-600 active:bg-green-700;
+        }
+        .btn-warning {
+            @apply bg-yellow-500 text-white hover:bg-yellow-600 active:bg-yellow-700;
+        }
+        .btn-danger {
+            @apply bg-red-500 text-white hover:bg-red-600 active:bg-red-700;
+        }
+        .btn-info {
+            @apply bg-cyan-500 text-white hover:bg-cyan-600 active:bg-cyan-700;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 700px;
+            transform: translateY(-20px);
+            opacity: 0;
+            animation: fadeInScale 0.3s forwards;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        @keyframes fadeInScale {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .score-button {
+            @apply w-12 h-12 flex items-center justify-center text-lg font-bold rounded-full border-2 border-transparent transition-all duration-200;
+        }
+        .score-button:hover {
+            @apply border-blue-500;
+        }
+        .score-button.selected {
+            @apply bg-blue-500 text-white border-blue-600;
+        }
+        .document-content-display {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .loading-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: #2563eb;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Styles pour les messages d'alerte/confirmation */
+        .alert-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 500;
+        }
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #34d399;
+        }
+        .alert-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .alert-info {
+            background-color: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #60a5fa;
+        }
+        .alert-warning {
+            background-color: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fcd34d;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4">
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center text-blue-700 mb-6">RVsion</h1>
+
+        <div class="mb-8 p-6 bg-gray-50 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Ajouter un nouveau document</h2>
+            <div class="flex flex-col gap-4">
+                <input type="text" id="documentNameInput" placeholder="Nom du document ou du cours"
+                        class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                
+                <select id="documentCategorySelect" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Sélectionner une catégorie</option>
+                </select>
+                <select id="documentSubcategorySelect" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+                    <option value="">Sélectionner une sous-catégorie</option>
+                </select>
+
+                <textarea id="documentContentInput" placeholder="Contenu du document (notes, concepts clés...)"
+                                rows="6" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                <button id="addDocumentBtn" class="btn btn-primary">➕ Ajouter le document</button>
+            </div>
+            <div class="mt-4">
+                <button id="manageCategoriesBtn" class="btn btn-secondary w-full">⚙️ Gérer les Catégories</button>
+            </div>
+        </div>
+
+        <div class="mb-8 p-6 bg-blue-50 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold text-blue-700 mb-4">Documents à réviser aujourd'hui</h2>
+            <div id="documentsDueToday" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <p id="noDocumentsDue" class="text-gray-600 italic">Aucun document à réviser aujourd'hui. Bravo !</p>
+            </div>
+        </div>
+
+        <div class="mb-8 p-6 bg-purple-50 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold text-purple-700 mb-4">Mes Tests AI (En attente/En cours)</h2>
+            <div id="aiTestsSavedList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <p id="noAITestsSaved" class="text-gray-600 italic">Aucun test AI en attente. Générez-en un !</p>
+            </div>
+        </div>
+
+        <div class="p-6 bg-gray-50 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Tous mes documents</h2>
+            <div class="mb-4 flex flex-col sm:flex-row gap-4 items-center">
+                <input type="text" id="searchDocumentInput" placeholder="Rechercher un document..."
+                        class="p-2 border border-gray-300 rounded-lg flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select id="filterStatusSelect" class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">Tous les statuts</option>
+                    <option value="due">À réviser aujourd'hui</option>
+                    <option value="not-due">Non dus</option>
+                </select>
+                <select id="filterCategorySelect" class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">Toutes catégories</option>
+                </select>
+                <select id="filterSubcategorySelect" class="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+                    <option value="all">Toutes sous-catégories</option>
+                </select>
+            </div>
+            <div id="allDocumentsList" class="grid grid-cols-1 gap-4">
+                <p id="noDocumentsYet" class="text-gray-600 italic">Vous n'avez pas encore ajouté de documents.</p>
+            </div>
+        </div>
+
+        <div class="mt-8 p-6 bg-gray-50 rounded-lg shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+            <h2 class="text-2xl font-semibold text-gray-700">Outils de gestion des données</h2>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="exportDataBtn" class="btn btn-secondary">📥 Exporter les données</button>
+                <input type="file" id="importFileInput" accept=".json" class="hidden">
+                <button id="importDataBtn" class="btn btn-secondary">📤 Importer les données</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="reviewModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Révision de : <span id="modalDocumentName" class="font-bold text-blue-600"></span></h3>
+            <div id="modalDocumentContent" class="document-content-display"></div>
+            <p class="text-gray-600 mb-6">Évaluez la facilité de la révision (1 = Oublié, 5 = Très facile)</p>
+            <div class="flex justify-around gap-2 mb-6">
+                <button class="score-button bg-red-100 text-red-700" data-score="1">1</button>
+                <button class="score-button bg-orange-100 text-orange-700" data-score="2">2</button>
+                <button class="score-button bg-yellow-100 text-yellow-700" data-score="3">3</button>
+                <button class="score-button bg-lime-100 text-lime-700" data-score="4">4</button>
+                <button class="score-button bg-green-100 text-green-700" data-score="5">5</button>
+            </div>
+            <div class="flex justify-end gap-4">
+                <button id="cancelReviewBtn" class="btn btn-secondary">Annuler</button>
+                <button id="submitReviewBtn" class="btn btn-primary" disabled>Soumettre l'évaluation</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="testConfigModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Préparer le Test AI pour : <span id="testConfigDocumentName" class="font-bold text-blue-600"></span></h3>
+            <div id="testConfigInputs" class="flex flex-col gap-4 mb-6">
+                <div>
+                    <label for="studyLevelInput" class="block text-sm font-medium text-gray-700 mb-1">Niveau d'étude :</label>
+                    <select id="studyLevelInput" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Sélectionner un niveau</option>
+                        <option value="Primaire">Primaire</option>
+                        <option value="Collège">Collège</option>
+                        <option value="Lycée">Lycée</option>
+                        <option value="Université">Université</option>
+                        <option value="Professionnel">Professionnel</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="difficultyInput" class="block text-sm font-medium text-gray-700 mb-1">Niveau de difficulté du test :</label>
+                    <select id="difficultyInput" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Très facile">Très facile</option>
+                        <option value="Facile">Facile</option>
+                        <option value="Moyen">Moyen</option>
+                        <option value="Difficile">Difficile</option>
+                        <option value="Très difficile">Très difficile</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="additionalContextInput" class="block text-sm font-medium text-gray-700 mb-1">Contexte ou instructions supplémentaires pour l'IA :</label>
+                    <textarea id="additionalContextInput" placeholder="Ex: Pose des questions à choix multiples, Concentre-toi sur les dates..."
+                                rows="3" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-4">
+                <button id="cancelTestConfigBtn" class="btn btn-secondary">Annuler</button>
+                <button id="generateTestBtn" class="btn btn-primary">✨ Générer le Test</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="testDisplayModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Test AI pour : <span id="testDisplayDocumentName" class="font-bold text-blue-600"></span></h3>
+            <div id="testLoading" class="flex justify-center items-center py-8">
+                <div class="loading-spinner"></div>
+                <p class="ml-4 text-gray-600">Génération du test par l'IA...</p>
+            </div>
+            <div id="testContent" class="document-content-display hidden"></div>
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="cancelTestDisplayBtn" class="btn btn-secondary">Annuler</button>
+                <button id="saveGeneratedTestBtn" class="btn btn-primary hidden">💾 Sauvegarder le Test</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="doTestModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Répondre au Test AI : <span id="doTestDocumentName" class="font-bold text-blue-600"></span></h3>
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-lg font-semibold text-gray-700">Temps écoulé : <span id="testTimer" class="font-bold text-blue-600">00:00:00</span></span>
+                <div class="flex gap-2">
+                    <button id="startTestBtn" class="btn btn-success">▶️ Commencer le test</button>
+                    <button id="finishTestBtn" class="btn btn-danger hidden">⏸️ Terminer le test</button>
+                </div>
+            </div>
+            <div class="mb-4">
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Questions du test :</h4>
+                <div id="doTestContent" class="document-content-display h-48">
+                    <p class="text-gray-500 italic">Le contenu du test apparaîtra ici. Cliquez sur "Commencer le test" pour démarrer le minuteur.</p>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Mes réponses :</h4>
+                <textarea id="userAnswersInput" placeholder="Tapez vos réponses ici..."
+                                rows="8" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                <button id="submitAnswersBtn" class="btn btn-primary w-full mt-2">📊 Soumettre mes réponses à l'IA</button>
+            </div>
+
+            <div id="aiEvaluationSection" class="hidden mb-4">
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Évaluation de l'IA :</h4>
+                <div id="aiEvaluationLoading" class="flex justify-center items-center py-4 hidden">
+                    <div class="loading-spinner"></div>
+                    <p class="ml-4 text-gray-600">L'IA évalue vos réponses...</p>
+                </div>
+                <div id="aiEvaluationResult" class="document-content-display bg-blue-50 border-blue-200"></div>
+            </div>
+
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="cancelDoTestBtn" class="btn btn-secondary">Fermer</button>
+                <button id="viewCorrectionBtn" class="btn btn-info hidden">📚 Voir le corrigé</button>
+                <button id="evaluateMyUnderstandingBtn" class="btn btn-primary hidden">Évaluer ma compréhension (1-5)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="correctionModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Corrigé pour : <span id="correctionDocumentName" class="font-bold text-blue-600"></span></h3>
+            <div id="correctionLoading" class="flex justify-center items-center py-8 hidden">
+                <div class="loading-spinner"></div>
+                <p class="ml-4 text-gray-600">Génération du corrigé par l'IA...</p>
+            </div>
+            <div id="correctionContent" class="document-content-display"></div>
+            <div class="flex justify-end gap-4 mt-6">
+                <button id="closeCorrectionBtn" class="btn btn-primary">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="categoryManagementModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gérer les Catégories et Sous-catégories</h3>
+            <div class="mb-4">
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Ajouter une nouvelle catégorie</h4>
+                <div class="flex gap-2">
+                    <input type="text" id="newCategoryNameInput" placeholder="Nom de la catégorie" class="p-2 border rounded-lg flex-grow">
+                    <button id="addCategoryBtn" class="btn btn-primary">➕ Ajouter</button>
+                </div>
+            </div>
+            <div class="mb-4">
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Catégories existantes</h4>
+                <ul id="categoriesList" class="space-y-3">
+                    <!-- Categories will be rendered here -->
+                </ul>
+            </div>
+            <div class="flex justify-end gap-4">
+                <button id="closeCategoryManagementBtn" class="btn btn-secondary">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4" id="confirmTitle">Confirmer</h3>
+            <p class="text-gray-600 mb-6" id="confirmMessage">Êtes-vous sûr ?</p>
+            <div class="flex justify-end gap-4">
+                <button id="cancelConfirmBtn" class="btn btn-secondary">Annuler</button>
+                <button id="okConfirmBtn" class="btn btn-danger">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="customAlertModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4" id="alertTitle">Alerte</h3>
+            <p class="text-gray-600 mb-6" id="alertMessage">Ceci est un message d'alerte.</p>
+            <div class="flex justify-end">
+                <button id="closeAlertBtn" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fonction utilitaire pour formater les dates
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('fr-FR', options);
+        }
+
+        // Fonction utilitaire pour formater le temps en HH:MM:SS
+        function formatTime(seconds) {
+            const h = String(Math.floor(seconds / 3600)).padStart(2, '0');
+            const m = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+            const s = String(seconds % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        // Récupérer les éléments du DOM
+        const documentNameInput = document.getElementById('documentNameInput');
+        const documentCategorySelect = document.getElementById('documentCategorySelect');
+        const documentSubcategorySelect = document.getElementById('documentSubcategorySelect');
+        const documentContentInput = document.getElementById('documentContentInput');
+        const addDocumentBtn = document.getElementById('addDocumentBtn');
+        const manageCategoriesBtn = document.getElementById('manageCategoriesBtn'); // Nouveau
+        const documentsDueTodayContainer = document.getElementById('documentsDueToday');
+        const noDocumentsDueMessage = document.getElementById('noDocumentsDue');
+        const allDocumentsList = document.getElementById('allDocumentsList');
+        const noDocumentsYetMessage = document.getElementById('noDocumentsYet');
+
+        // Éléments pour la recherche et le filtrage
+        const searchDocumentInput = document.getElementById('searchDocumentInput');
+        const filterStatusSelect = document.getElementById('filterStatusSelect');
+        const filterCategorySelect = document.getElementById('filterCategorySelect'); // Nouveau
+        const filterSubcategorySelect = document.getElementById('filterSubcategorySelect'); // Nouveau
+
+        // Boutons d'import/export
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const importDataBtn = document.getElementById('importDataBtn');
+        const importFileInput = document.getElementById('importFileInput');
+
+        // Modale de révision
+        const reviewModal = document.getElementById('reviewModal');
+        const modalDocumentName = document.getElementById('modalDocumentName');
+        const modalDocumentContent = document.getElementById('modalDocumentContent');
+        const scoreButtons = document.querySelectorAll('.score-button');
+        const cancelReviewBtn = document.getElementById('cancelReviewBtn');
+        const submitReviewBtn = document.getElementById('submitReviewBtn');
+
+        // Modale de configuration du test AI
+        const testConfigModal = document.getElementById('testConfigModal');
+        const testConfigDocumentName = document.getElementById('testConfigDocumentName');
+        const studyLevelInput = document.getElementById('studyLevelInput');
+        const difficultyInput = document.getElementById('difficultyInput'); // Nouveau
+        const additionalContextInput = document.getElementById('additionalContextInput');
+        const cancelTestConfigBtn = document.getElementById('cancelTestConfigBtn');
+        const generateTestBtn = document.getElementById('generateTestBtn');
+
+        // Modale d'affichage du test AI après génération
+        const testDisplayModal = document.getElementById('testDisplayModal');
+        const testDisplayDocumentName = document.getElementById('testDisplayDocumentName');
+        const testLoading = document.getElementById('testLoading');
+        const testContent = document.getElementById('testContent');
+        const cancelTestDisplayBtn = document.getElementById('cancelTestDisplayBtn');
+        const saveGeneratedTestBtn = document.getElementById('saveGeneratedTestBtn');
+
+        // Modale pour répondre au test AI
+        const doTestModal = document.getElementById('doTestModal');
+        const doTestDocumentName = document.getElementById('doTestDocumentName');
+        const doTestContent = document.getElementById('doTestContent');
+        const testTimer = document.getElementById('testTimer');
+        const startTestBtn = document.getElementById('startTestBtn');
+        const finishTestBtn = document.getElementById('finishTestBtn');
+        const cancelDoTestBtn = document.getElementById('cancelDoTestBtn');
+        const aiTestsSavedList = document.getElementById('aiTestsSavedList');
+        const noAITestsSavedMessage = document.getElementById('noAITestsSaved');
+
+        // Éléments de la modale de réponse au test AI
+        const userAnswersInput = document.getElementById('userAnswersInput');
+        const submitAnswersBtn = document.getElementById('submitAnswersBtn');
+        const aiEvaluationSection = document.getElementById('aiEvaluationSection');
+        const aiEvaluationLoading = document.getElementById('aiEvaluationLoading');
+        const aiEvaluationResult = document.getElementById('aiEvaluationResult');
+        const evaluateMyUnderstandingBtn = document.getElementById('evaluateMyUnderstandingBtn');
+        const viewCorrectionBtn = document.getElementById('viewCorrectionBtn');
+
+        // Modale du corrigé
+        const correctionModal = document.getElementById('correctionModal');
+        const correctionDocumentName = document.getElementById('correctionDocumentName');
+        const correctionLoading = document.getElementById('correctionLoading');
+        const correctionContent = document.getElementById('correctionContent');
+        const closeCorrectionBtn = document.getElementById('closeCorrectionBtn');
+
+        // Modale de gestion des catégories
+        const categoryManagementModal = document.getElementById('categoryManagementModal'); // Nouveau
+        const newCategoryNameInput = document.getElementById('newCategoryNameInput'); // Nouveau
+        const addCategoryBtn = document.getElementById('addCategoryBtn'); // Nouveau
+        const categoriesList = document.getElementById('categoriesList'); // Nouveau
+        const closeCategoryManagementBtn = document.getElementById('closeCategoryManagementBtn'); // Nouveau
+
+        // Modale de confirmation personnalisée
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmTitle = document.getElementById('confirmTitle');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
+        const okConfirmBtn = document.getElementById('okConfirmBtn');
+
+        // Modale d'alerte personnalisée
+        const customAlertModal = document.getElementById('customAlertModal');
+        const alertTitle = document.getElementById('alertTitle');
+        const alertMessage = document.getElementById('alertMessage');
+        const closeAlertBtn = document.getElementById('closeAlertBtn');
+
+        let documents = []; // Tableau pour stocker tous les documents
+        // Nouvelle structure pour les catégories et sous-catégories
+        let categories = []; // [{ id: 'uuid', name: 'Informatique', subcategories: [{ id: 'uuid', name: 'Réseaux' }] }]
+
+        let currentReviewingDocumentId = null; // ID du document en cours de révision
+        let selectedScore = null; // Score sélectionné dans la modale de révision
+        let currentDocumentForTest = null; // Document en cours de test AI (génération)
+        let currentAITestBeingAnswered = null; // Test AI en cours de réponse (pour le minuteur et l'évaluation)
+        let timerInterval; // Variable pour le minuteur
+        let secondsElapsed = 0; // Compteur de secondes pour le minuteur
+
+        // API Key pour Gemini (sera injectée par Canvas au runtime)
+        const apiKey = ""; 
+
+        /**
+         * Affiche une modale d'alerte personnalisée.
+         * @param {string} message Le message à afficher dans l'alerte.
+         * @param {string} [title='Alerte'] Le titre de l'alerte.
+         * @param {string} [type='info'] Le type d'alerte ('info', 'success', 'error', 'warning').
+         */
+        function showAlert(message, title = 'Alerte', type = 'info') {
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
+            customAlertModal.classList.remove('hidden');
+
+            // Cibler le paragraphe contenant le message dans la modale d'alerte
+            const alertParagraph = customAlertModal.querySelector('#alertMessage');
+            // Réinitialiser les classes de type et appliquer la nouvelle
+            alertParagraph.className = 'text-gray-600 mb-6'; // Reset initial
+            const alertClasses = ['alert-message'];
+            if (type === 'success') {
+                alertClasses.push('alert-success');
+            } else if (type === 'error') {
+                alertClasses.push('alert-error');
+            } else if (type === 'warning') {
+                alertClasses.push('alert-warning');
+            } else {
+                alertClasses.push('alert-info');
+            }
+            alertParagraph.className = alertClasses.join(' ');
+        }
+
+        // Gérer la fermeture de la modale d'alerte
+        closeAlertBtn.addEventListener('click', () => {
+            customAlertModal.classList.add('hidden');
+        });
+
+        /**
+         * Affiche une modale de confirmation personnalisée.
+         * @param {string} message Le message de confirmation.
+         * @param {string} [title='Confirmer'] Le titre de la modale.
+         * @returns {Promise<boolean>} Une promesse qui se résout à true si confirmé, false sinon.
+         */
+        function showConfirm(message, title = 'Confirmer') {
+            return new Promise((resolve) => {
+                confirmTitle.textContent = title;
+                confirmMessage.textContent = message;
+                confirmModal.classList.remove('hidden');
+
+                const handleConfirm = () => {
+                    confirmModal.classList.add('hidden');
+                    okConfirmBtn.removeEventListener('click', handleConfirm);
+                    cancelConfirmBtn.removeEventListener('click', handleCancel);
+                    resolve(true);
+                };
+
+                const handleCancel = () => {
+                    confirmModal.classList.add('hidden');
+                    okConfirmBtn.removeEventListener('click', handleConfirm);
+                    cancelConfirmBtn.removeEventListener('click', handleCancel);
+                    resolve(false);
+                };
+
+                okConfirmBtn.addEventListener('click', handleConfirm);
+                cancelConfirmBtn.addEventListener('click', handleCancel);
+            });
+        }
+
+        // Charger les documents et catégories depuis le stockage local
+        function loadDocuments() {
+            const storedDocs = localStorage.getItem('forgettingCurveDocuments');
+            if (storedDocs) {
+                documents = JSON.parse(storedDocs);
+                documents.forEach(doc => {
+                    doc.lastReviewed = new Date(doc.lastReviewed);
+                    doc.nextReview = new Date(doc.nextReview);
+                    // S'assurer que les propriétés existent pour les anciens documents et tests AI
+                    doc.category = doc.category || 'Non classé';
+                    doc.subcategory = doc.subcategory || 'Non classé';
+
+                    if (doc.aiTests) {
+                        doc.aiTests.forEach(test => {
+                            test.generatedAt = new Date(test.generatedAt);
+                            if (test.startTime) test.startTime = new Date(test.startTime);
+                            if (test.endTime) test.endTime = new Date(test.endTime);
+                            test.config.difficulty = test.config.difficulty || 'Moyen';
+                            // Nettoyage des anciennes propriétés de thème si elles existent
+                            delete test.config.generalTheme;
+                            delete test.config.specificTheme;
+                        });
+                    }
+                });
+            }
+
+            const storedCategories = localStorage.getItem('rvsionCategories');
+            if (storedCategories) {
+                categories = JSON.parse(storedCategories);
+            }
+            populateCategorySelectors(); // Remplir les sélecteurs de catégories au chargement de l'ajout de document
+            populateFilterCategorySelectors(); // Remplir les sélecteurs de filtre
+            renderDocuments();
+            renderAITests();
+        }
+
+        // Sauvegarder les documents et catégories dans le stockage local
+        function saveDocuments() {
+            localStorage.setItem('forgettingCurveDocuments', JSON.stringify(documents));
+            localStorage.setItem('rvsionCategories', JSON.stringify(categories)); // Sauvegarder les catégories
+        }
+
+        // Algorithme SM-2 simplifié pour la répétition espacée
+        // q: Qualité de la réponse (1-5)
+        // doc: Objet document à mettre à jour
+        function calculateNextReview(doc, q) {
+            let ef = doc.easeFactor; // Facteur de facilité
+            let n = doc.consecutiveSuccessfulReviews; // Nombre de révisions réussies consécutives
+            let interval = doc.currentInterval; // Intervalle actuel en jours
+
+            if (q >= 3) { // Révision réussie
+                if (n === 0) {
+                    interval = 1;
+                } else if (n === 1) {
+                    interval = 6;
+                } else {
+                    interval = Math.round(interval * ef);
+                }
+                n++; // Incrémenter le nombre de révisions réussies
+            } else { // Révision échouée (q < 3)
+                n = 0; // Réinitialiser le nombre de révisions réussies
+                interval = 1; // Proposer à nouveau le lendemain
+            }
+
+            // Ajuster le facteur de facilité
+            ef = ef + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+            if (ef < 1.3) {
+                ef = 1.3; // Le facteur de facilité ne doit pas descendre en dessous de 1.3
+            }
+
+            doc.easeFactor = ef;
+            doc.consecutiveSuccessfulReviews = n;
+            doc.currentInterval = interval;
+            doc.lastReviewed = new Date(); // Date de la révision actuelle
+
+            const nextReviewDate = new Date();
+            nextReviewDate.setDate(nextReviewDate.getDate() + interval);
+            doc.nextReview = nextReviewDate; // Prochaine date de révision
+            saveDocuments(); // Sauvegarder après chaque mise à jour
+        }
+
+        // Rendre les documents dans l'interface utilisateur
+        function renderDocuments() {
+            // Réinitialiser les listes
+            documentsDueTodayContainer.innerHTML = '';
+            allDocumentsList.innerHTML = '';
+            noDocumentsDueMessage.style.display = 'none';
+            noDocumentsYetMessage.style.display = 'none';
+
+            if (documents.length === 0) {
+                noDocumentsYetMessage.style.display = 'block';
+                noDocumentsDueMessage.style.display = 'block';
+                return;
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Ignorer l'heure pour la comparaison
+
+            let documentsDueCount = 0;
+            const searchTerm = searchDocumentInput.value.toLowerCase();
+            const filterStatus = filterStatusSelect.value;
+            const filterCategory = filterCategorySelect.value === 'all' ? null : categories.find(cat => cat.id === filterCategorySelect.value)?.name; // Nom de la catégorie sélectionnée
+            const filterSubcategory = filterSubcategorySelect.value === 'all' ? null : categories.find(cat => cat.id === filterCategorySelect.value)?.subcategories.find(sub => sub.id === filterSubcategorySelect.value)?.name; // Nom de la sous-catégorie sélectionnée
+
+            const filteredDocuments = documents.filter(doc => {
+                const matchesSearch = doc.name.toLowerCase().includes(searchTerm) || 
+                                      doc.content.toLowerCase().includes(searchTerm) ||
+                                      (doc.category && doc.category.toLowerCase().includes(searchTerm)) || 
+                                      (doc.subcategory && doc.subcategory.toLowerCase().includes(searchTerm)); 
+                
+                const nextReviewDate = new Date(doc.nextReview);
+                nextReviewDate.setHours(0, 0, 0, 0);
+                const isDueToday = nextReviewDate <= today;
+
+                let matchesStatus = true;
+                if (filterStatus === 'due') {
+                    matchesStatus = isDueToday;
+                } else if (filterStatus === 'not-due') {
+                    matchesStatus = !isDueToday;
+                }
+
+                let matchesCategory = true;
+                if (filterCategory) {
+                    matchesCategory = doc.category === filterCategory;
+                }
+
+                let matchesSubcategory = true;
+                if (filterSubcategory) {
+                    matchesSubcategory = doc.subcategory === filterSubcategory;
+                }
+
+                return matchesSearch && matchesStatus && matchesCategory && matchesSubcategory;
+            });
+
+            if (filteredDocuments.length === 0 && (searchTerm.length > 0 || filterStatus !== 'all' || filterCategory !== null || filterSubcategory !== null)) {
+                allDocumentsList.innerHTML = '<p class="text-gray-600 italic">Aucun document ne correspond à vos critères de recherche/filtre.</p>';
+            } else if (filteredDocuments.length === 0 && searchTerm.length === 0 && filterStatus === 'all' && filterCategory === null && filterSubcategory === null) {
+                 noDocumentsYetMessage.style.display = 'block';
+                 allDocumentsList.innerHTML = ''; 
+            } else if (filteredDocuments.length === 0) { // Catch all other empty cases for the main list
+                allDocumentsList.innerHTML = '<p class="text-gray-600 italic">Aucun document ne correspond à vos critères de recherche/filtre.</p>';
+            }
+
+
+            filteredDocuments.forEach(doc => {
+                const nextReviewDate = new Date(doc.nextReview);
+                nextReviewDate.setHours(0, 0, 0, 0);
+
+                const isDueToday = nextReviewDate <= today;
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-lg shadow-md flex flex-col justify-between ${isDueToday ? 'bg-blue-100 border border-blue-300' : 'bg-white border border-gray-200'}`;
+                card.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-2 text-gray-900">${doc.name}</h3>
+                    <p class="text-sm text-gray-600">Catégorie: ${doc.category || 'Non classé'} | Sous-catégorie: ${doc.subcategory || 'Non classé'}</p>
+                    <p class="text-sm text-gray-600">Dernière révision: ${formatDate(doc.lastReviewed)}</p>
+                    <p class="text-sm text-gray-600">Prochaine révision: <span class="font-medium ${isDueToday ? 'text-blue-700' : 'text-gray-700'}">${formatDate(doc.nextReview)}</span></p>
+                    <p class="text-xs text-gray-500 mt-1">EF: ${doc.easeFactor.toFixed(2)} | Intervalle: ${doc.currentInterval} jours | Révisions réussies: ${doc.consecutiveSuccessfulReviews}</p>
+                    <div class="mt-4 flex justify-end gap-2">
+                        <button data-id="${doc.id}" class="btn btn-success review-btn">📝 Réviser</button>
+                        <button data-id="${doc.id}" class="btn btn-warning test-ai-btn">✨ Test (IA)</button>
+                        <button data-id="${doc.id}" class="btn btn-danger delete-btn">🗑️ Supprimer</button>
+                    </div>
+                `;
+
+                // Ajout dans la section "Documents à réviser aujourd'hui"
+                // Correction: matchesSearch et autres sont déjà pris en compte par filteredDocuments
+                if (isDueToday) { 
+                    documentsDueTodayContainer.appendChild(card.cloneNode(true)); // Cloner pour éviter de déplacer l'élément
+                    documentsDueCount++;
+                }
+                // Ajout dans la section "Tous mes documents" (après filtrage/recherche)
+                allDocumentsList.appendChild(card);
+            });
+
+            if (documentsDueCount === 0) {
+                noDocumentsDueMessage.style.display = 'block';
+            } else {
+                noDocumentsDueMessage.style.display = 'none';
+            }
+            if (documents.length > 0) {
+                noDocumentsYetMessage.style.display = 'none';
+            }
+
+            addDocumentEventListeners(); // Ré-ajouter les écouteurs pour tous les boutons
+        }
+
+        // Nouvelle fonction pour rendre les tests AI sauvegardés
+        function renderAITests() {
+            aiTestsSavedList.innerHTML = '';
+            noAITestsSavedMessage.style.display = 'block';
+
+            let aiTestsCount = 0;
+            documents.forEach(doc => {
+                if (doc.aiTests && doc.aiTests.length > 0) {
+                    doc.aiTests.forEach(aiTest => {
+                        // N'afficher que les tests 'pending' ou 'in_progress' ou 'completed'
+                        if (aiTest.status === 'pending' || aiTest.status === 'in_progress' || aiTest.status === 'completed') {
+                            noAITestsSavedMessage.style.display = 'none';
+                            aiTestsCount++;
+                            const testCard = document.createElement('div');
+                            testCard.className = `p-4 rounded-lg shadow-md flex flex-col justify-between bg-purple-100 border border-purple-300`;
+                            
+                            let statusText = '';
+                            let statusClass = '';
+                            if (aiTest.status === 'pending') {
+                                statusText = 'En attente';
+                                statusClass = 'text-purple-700';
+                            } else if (aiTest.status === 'in_progress') {
+                                statusText = 'En cours';
+                                statusClass = 'text-orange-700';
+                            } else if (aiTest.status === 'completed') {
+                                statusText = 'Terminé';
+                                statusClass = 'text-green-700';
+                            }
+
+                            let durationText = aiTest.duration ? `Durée: ${formatTime(aiTest.duration)}` : '';
+                            let scoreText = aiTest.aiScore ? `Note AI: ${aiTest.aiScore}/5` : '';
+
+                            testCard.innerHTML = `
+                                <h3 class="text-lg font-semibold mb-2 text-gray-900">Test AI pour : ${doc.name}</h3>
+                                <p class="text-sm text-gray-600">Catégorie: ${doc.category || 'Non classé'} | Sous-catégorie: ${doc.subcategory || 'Non classé'}</p>
+                                <p class="text-sm text-gray-600">Difficulté: ${aiTest.config.difficulty || 'Non spécifiée'} | Niveau: ${aiTest.config.studyLevel || 'Non spécifié'}</p>
+                                <p class="text-xs text-gray-500 mt-1">Statut: <span class="font-bold ${statusClass}">${statusText}</span> ${durationText ? `| ${durationText}` : ''} ${scoreText ? `| ${scoreText}` : ''}</p>
+                                <div class="mt-4 flex justify-end gap-2">
+                                    <button data-doc-id="${doc.id}" data-test-id="${aiTest.id}" class="btn btn-primary do-ai-test-btn">▶️ Répondre au Test</button>
+                                    <button data-doc-id="${doc.id}" data-test-id="${aiTest.id}" class="btn btn-danger delete-ai-test-btn">🗑️ Supprimer</button>
+                                </div>
+                            `;
+                            aiTestsSavedList.appendChild(testCard);
+                        }
+                    });
+                }
+            });
+
+            if (aiTestsCount === 0) {
+                noAITestsSavedMessage.style.display = 'block';
+            }
+            addAITestEventListeners(); // Ajouter les écouteurs d'événements pour les nouveaux boutons de test
+        }
+
+        // Fonction pour peupler les sélecteurs de catégorie et sous-catégorie lors de l'ajout de document
+        function populateCategorySelectors() {
+            documentCategorySelect.innerHTML = '<option value="">Sélectionner une catégorie</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                documentCategorySelect.appendChild(option);
+            });
+            // Réinitialiser et désactiver la sous-catégorie par défaut
+            documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>';
+            documentSubcategorySelect.disabled = true;
+        }
+
+        // Gérer le changement de catégorie pour peupler les sous-catégories (ajout de document)
+        documentCategorySelect.addEventListener('change', () => {
+            const selectedCategoryId = documentCategorySelect.value;
+            documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>';
+            documentSubcategorySelect.disabled = true;
+
+            if (selectedCategoryId) {
+                const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+                if (selectedCategory && selectedCategory.subcategories.length > 0) {
+                    selectedCategory.subcategories.forEach(sub => {
+                        const option = document.createElement('option');
+                        option.value = sub.id;
+                        option.textContent = sub.name;
+                        documentSubcategorySelect.appendChild(option);
+                    });
+                    documentSubcategorySelect.disabled = false;
+                }
+            }
+        });
+
+        // NOUVEAU: Fonction pour peupler les sélecteurs de filtre par catégorie
+        function populateFilterCategorySelectors() {
+            filterCategorySelect.innerHTML = '<option value="all">Toutes catégories</option>';
+            categories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat.id;
+                option.textContent = cat.name;
+                filterCategorySelect.appendChild(option);
+            });
+            // Réinitialiser et désactiver la sous-catégorie par défaut pour les filtres
+            filterSubcategorySelect.innerHTML = '<option value="all">Toutes sous-catégories</option>';
+            filterSubcategorySelect.disabled = true;
+        }
+
+        // NOUVEAU: Gérer le changement de catégorie pour peupler les sous-catégories (filtre)
+        filterCategorySelect.addEventListener('change', () => {
+            const selectedCategoryId = filterCategorySelect.value;
+            filterSubcategorySelect.innerHTML = '<option value="all">Toutes sous-catégories</option>';
+            filterSubcategorySelect.disabled = true;
+
+            if (selectedCategoryId && selectedCategoryId !== 'all') {
+                const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+                if (selectedCategory && selectedCategory.subcategories.length > 0) {
+                    selectedCategory.subcategories.forEach(sub => {
+                        const option = document.createElement('option');
+                        option.value = sub.id;
+                        option.textContent = sub.name;
+                        filterSubcategorySelect.appendChild(option);
+                    });
+                    filterSubcategorySelect.disabled = false;
+                }
+            }
+            renderDocuments(); // Mettre à jour l'affichage des documents après le changement de filtre
+        });
+
+        // NOUVEAU: Mettre à jour l'affichage des documents après le changement de filtre de sous-catégorie
+        filterSubcategorySelect.addEventListener('change', renderDocuments);
+
+
+        // Ajouter un nouveau document
+        addDocumentBtn.addEventListener('click', () => {
+            try {
+                const name = documentNameInput.value.trim();
+                const selectedCategoryId = documentCategorySelect.value;
+                const selectedSubcategoryId = documentSubcategorySelect.value;
+                const content = documentContentInput.value.trim();
+
+                if (!name || !content) {
+                    showAlert('Veuillez entrer un nom ET un contenu pour le document.', 'Champs vides', 'error');
+                    return;
+                }
+
+                let categoryName = 'Non classé';
+                let subcategoryName = 'Non classé';
+
+                if (selectedCategoryId) {
+                    const category = categories.find(cat => cat.id === selectedCategoryId);
+                    if (category) {
+                        categoryName = category.name;
+                        // Ensure subcategoryName is updated only if a valid subcategory is selected
+                        if (selectedSubcategoryId && selectedSubcategoryId !== "") { // Check for empty string value too
+                            const subcategory = category.subcategories.find(sub => sub.id === selectedSubcategoryId);
+                            if (subcategory) {
+                                subcategoryName = subcategory.name;
+                            } else {
+                                subcategoryName = 'Non classé'; // Reset if ID doesn't match a subcategory (e.g. old data)
+                            }
+                        } else {
+                            subcategoryName = 'Non classé'; // If no subcategory selected (e.g. 'Sélectionner une sous-catégorie' option)
+                        }
+                    } else {
+                        categoryName = 'Non classé'; // Reset if category ID doesn't match (e.g. old data)
+                        subcategoryName = 'Non classé';
+                    }
+                }
+
+                const newDoc = {
+                    id: crypto.randomUUID(),
+                    name: name,
+                    category: categoryName,
+                    subcategory: subcategoryName,
+                    content: content,
+                    lastReviewed: new Date().toISOString(),
+                    nextReview: new Date().toISOString(),
+                    easeFactor: 2.5,
+                    consecutiveSuccessfulReviews: 0,
+                    currentInterval: 0,
+                    aiTests: []
+                };
+                documents.push(newDoc);
+                saveDocuments();
+                renderDocuments();
+                documentNameInput.value = '';
+                documentCategorySelect.value = ''; // Réinitialiser le sélecteur
+                documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>'; // Réinitialiser
+                documentSubcategorySelect.disabled = true; // Désactiver
+                documentContentInput.value = '';
+                showAlert('Document ajouté avec succès !', 'Succès', 'success');
+            } catch (error) {
+                console.error("Erreur lors de l'ajout du document:", error);
+                showAlert("Une erreur est survenue lors de l'ajout du document. Veuillez consulter la console pour plus de détails.", "Erreur d'ajout", 'error');
+            }
+        });
+
+        // Gérer les écouteurs d'événements pour tous les boutons des documents
+        function addDocumentEventListeners() {
+            document.querySelectorAll('.review-btn').forEach(button => {
+                button.removeEventListener('click', handleReviewButtonClick);
+                button.addEventListener('click', handleReviewButtonClick);
+            });
+            document.querySelectorAll('.test-ai-btn').forEach(button => {
+                button.removeEventListener('click', handleTestAIButtonClick);
+                button.addEventListener('click', handleTestAIButtonClick);
+            });
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.removeEventListener('click', handleDeleteButtonClick);
+                button.addEventListener('click', handleDeleteButtonClick);
+            });
+        }
+
+        // Gérer les écouteurs d'événements pour les tests AI
+        function addAITestEventListeners() {
+            document.querySelectorAll('.do-ai-test-btn').forEach(button => {
+                button.removeEventListener('click', handleDoAITestButtonClick); 
+                button.addEventListener('click', handleDoAITestButtonClick);
+            });
+            document.querySelectorAll('.delete-ai-test-btn').forEach(button => {
+                button.removeEventListener('click', handleDeleteAITestButtonClick); 
+                button.addEventListener('click', handleDeleteAITestButtonClick);
+            });
+        }
+
+        // Gestionnaire pour le bouton "Réviser"
+        function handleReviewButtonClick(event) {
+            const docId = event.target.dataset.id;
+            const doc = documents.find(d => d.id === docId);
+            if (doc) {
+                currentReviewingDocumentId = docId;
+                modalDocumentName.textContent = doc.name;
+                modalDocumentContent.textContent = doc.content;
+                reviewModal.classList.remove('hidden');
+                scoreButtons.forEach(btn => btn.classList.remove('selected'));
+                selectedScore = null;
+                submitReviewBtn.disabled = true;
+            }
+        }
+
+        // Gestionnaire pour le bouton "Test (IA)" (Ouvre la modale de configuration)
+        function handleTestAIButtonClick(event) {
+            const docId = event.target.dataset.id;
+            const doc = documents.find(d => d.id === docId);
+            if (doc) {
+                currentDocumentForTest = doc;
+                testConfigDocumentName.textContent = doc.name;
+                // Réinitialiser les champs de la modale de configuration
+                studyLevelInput.value = '';
+                difficultyInput.value = 'Moyen'; // Valeur par défaut
+                additionalContextInput.value = '';
+                testConfigModal.classList.remove('hidden');
+            }
+        }
+
+        // Gestionnaire pour le bouton "Générer le Test" dans la modale de configuration
+        generateTestBtn.addEventListener('click', async () => {
+            testConfigModal.classList.add('hidden'); // Cacher la modale de configuration
+            testDisplayModal.classList.remove('hidden'); // Afficher la modale d'affichage du test
+            testDisplayDocumentName.textContent = currentDocumentForTest.name;
+            testLoading.classList.remove('hidden');
+            testContent.classList.add('hidden');
+            saveGeneratedTestBtn.classList.add('hidden'); // Cacher le bouton de sauvegarde initialement
+            testContent.textContent = ''; // Vider le contenu précédent
+
+            const studyLevel = studyLevelInput.value.trim();
+            const difficulty = difficultyInput.value.trim(); 
+            const additionalContext = additionalContextInput.value.trim();
+
+            try {
+                let prompt = `En tant qu'expert en pédagogie, créez un court test d'auto-évaluation basé sur le document suivant.
+Le test doit comporter des questions variées (QCM, questions ouvertes courtes, vrai/faux) et être adapté pour aider l'apprenant à évaluer sa compréhension.
+N'incluez pas les réponses ni de corrigé dans ce test initial. Le but est de le faire réfléchir au contenu avant de s'auto-évaluer ou de voir un corrigé.
+Le test doit être clair et concis.
+
+Titre du document : ${currentDocumentForTest.name}
+Catégorie du document : ${currentDocumentForTest.category || 'Non spécifiée'}
+Sous-catégorie du document : ${currentDocumentForTest.subcategory || 'Non spécifiée'}
+Contenu du document : ${currentDocumentForTest.content}
+
+Informations supplémentaires pour adapter le test :
+Niveau d'étude de l'apprenant : ${studyLevel || 'Non spécifié'}
+Niveau de difficulté souhaité pour le test : ${difficulty || 'Moyen'}
+Contexte ou instructions supplémentaires : ${additionalContext || 'Aucun'}
+
+Le test doit être formaté de manière simple, avec des questions numérotées.`;
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Erreur API lors de la génération du test:', response.status, response.statusText, errorData);
+                    testContent.textContent = `Erreur lors de la génération du test (Code: ${response.status}). Veuillez réessayer. Détails: ${errorData.error?.message || 'Inconnu'}`;
+                    showAlert(`Erreur lors de la génération du test: ${response.status}`, 'Erreur AI', 'error');
+                } else {
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const aiResponseText = result.candidates[0].content.parts[0].text;
+                        testContent.textContent = aiResponseText;
+                        saveGeneratedTestBtn.classList.remove('hidden'); 
+                        showAlert('Test AI généré avec succès ! Vous pouvez maintenant le sauvegarder.', 'Succès AI', 'success');
+                    } else {
+                        console.error('Structure de réponse inattendue de l\'API Gemini:', result);
+                        testContent.textContent = "Désolé, je n'ai pas pu générer de test pour le moment. La réponse de l'IA n'était pas au format attendu. Veuillez réessayer.";
+                        showAlert('La réponse de l\'IA était inattendue.', 'Erreur AI', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'appel de l\'API Gemini:', error);
+                testContent.textContent = "Une erreur est survenue lors de la génération du test. Veuillez vérifier votre connexion internet ou réessayer plus tard.";
+                showAlert('Erreur de connexion lors de la génération du test.', 'Erreur Réseau', 'error');
+            } finally {
+                testLoading.classList.add('hidden');
+                testContent.classList.remove('hidden'); 
+            }
+        });
+
+        // Gérer le clic sur le bouton "Sauvegarder le Test"
+        saveGeneratedTestBtn.addEventListener('click', () => {
+            if (currentDocumentForTest && testContent.textContent.trim() !== '' && !testContent.textContent.trim().startsWith('Erreur')) {
+                const docIndex = documents.findIndex(d => d.id === currentDocumentForTest.id);
+                if (docIndex !== -1) {
+                    const newAITest = {
+                        id: crypto.randomUUID(),
+                        generatedAt: new Date().toISOString(),
+                        content: testContent.textContent,
+                        config: {
+                            studyLevel: studyLevelInput.value.trim(),
+                            difficulty: difficultyInput.value.trim(), 
+                            additionalContext: additionalContextInput.value.trim(),
+                        },
+                        status: 'pending', 
+                        startTime: null,
+                        endTime: null,
+                        duration: null, 
+                        userAnswers: null, 
+                        aiEvaluation: null, 
+                        aiScore: null, 
+                        correction: null, 
+                    };
+                    if (!documents[docIndex].aiTests) {
+                        documents[docIndex].aiTests = [];
+                    }
+                    documents[docIndex].aiTests.push(newAITest);
+                    saveDocuments(); 
+                    renderAITests(); 
+                    showAlert('Le test AI a été sauvegardé avec succès dans la section "Mes Tests AI".', 'Test sauvegardé', 'success');
+                    testDisplayModal.classList.add('hidden');
+                    currentDocumentForTest = null; 
+                }
+            } else {
+                showAlert("Impossible de sauvegarder un test vide ou erroné.", "Erreur de sauvegarde", 'error');
+            }
+        });
+
+        // Gestionnaire pour le bouton "Supprimer"
+        async function handleDeleteButtonClick(event) {
+            const docId = event.target.dataset.id;
+            const docToDelete = documents.find(d => d.id === docId);
+
+            if (docToDelete) {
+                const confirmed = await showConfirm(`Êtes-vous sûr de vouloir supprimer le document "${docToDelete.name}" ? Cette action est irréversible.`, 'Confirmation de suppression');
+                if (confirmed) {
+                    documents = documents.filter(doc => doc.id !== docId);
+                    saveDocuments(); 
+                    renderDocuments();
+                    renderAITests(); 
+                    showAlert(`Le document "${docToDelete.name}" a été supprimé.`, 'Suppression réussie', 'success');
+                }
+            }
+        }
+
+        // Gestionnaire pour le bouton "Supprimer" d'un test AI
+        async function handleDeleteAITestButtonClick(event) {
+            const docId = event.target.dataset.docId;
+            const testId = event.target.dataset.testId;
+
+            const doc = documents.find(d => d.id === docId);
+            if (doc && doc.aiTests) {
+                const testToDelete = doc.aiTests.find(test => test.id === testId);
+                if (testToDelete) {
+                    const confirmed = await showConfirm(`Êtes-vous sûr de vouloir supprimer ce test AI pour "${doc.name}" ?`, 'Confirmation de suppression du test AI');
+                    if (confirmed) {
+                        doc.aiTests = doc.aiTests.filter(test => test.id !== testId);
+                        saveDocuments(); 
+                        renderAITests();
+                        showAlert('Le test AI a été supprimé.', 'Suppression réussie', 'success');
+                    }
+                }
+            }
+        }
+
+        // Gérer la sélection du score dans la modale de révision
+        scoreButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                scoreButtons.forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+                selectedScore = parseInt(button.dataset.score);
+                submitReviewBtn.disabled = false;
+            });
+        });
+
+        submitReviewBtn.addEventListener('click', () => {
+            if (currentReviewingDocumentId && selectedScore !== null) {
+                const docIndex = documents.findIndex(d => d.id === currentReviewingDocumentId);
+                if (docIndex !== -1) {
+                    calculateNextReview(documents[docIndex], selectedScore);
+                    renderDocuments();
+                    reviewModal.classList.add('hidden');
+                    currentReviewingDocumentId = null;
+                    selectedScore = null;
+                    showAlert('Document révisé avec succès !', 'Révision Complète', 'success');
+                }
+            }
+        });
+
+        // Gérer l'annulation de la révision
+        cancelReviewBtn.addEventListener('click', () => {
+            reviewModal.classList.add('hidden');
+            currentReviewingDocumentId = null;
+            selectedScore = null;
+        });
+
+        // Gérer l'annulation de la modale de configuration du test AI
+        cancelTestConfigBtn.addEventListener('click', () => {
+            testConfigModal.classList.add('hidden');
+            currentDocumentForTest = null;
+        });
+
+        // Gérer l'annulation de la modale d'affichage du test AI
+        cancelTestDisplayBtn.addEventListener('click', () => {
+            testDisplayModal.classList.add('hidden');
+            currentDocumentForTest = null;
+            testContent.textContent = '';
+            testLoading.classList.add('hidden');
+            saveGeneratedTestBtn.classList.add('hidden');
+        });
+
+        // Nouvelle logique pour la modale "Répondre au Test AI"
+        function handleDoAITestButtonClick(event) {
+            const docId = event.target.dataset.docId;
+            const testId = event.target.dataset.testId;
+
+            const doc = documents.find(d => d.id === docId);
+            if (doc && doc.aiTests) {
+                const aiTest = doc.aiTests.find(test => test.id === testId);
+                if (aiTest) {
+                    currentAITestBeingAnswered = aiTest;
+                    currentDocumentForTest = doc; 
+
+                    doTestDocumentName.textContent = doc.name;
+                    doTestContent.textContent = aiTest.content; 
+
+                    // Réinitialiser les éléments de la modale de réponse
+                    userAnswersInput.value = aiTest.userAnswers || ''; 
+                    aiEvaluationSection.classList.add('hidden');
+                    aiEvaluationResult.textContent = '';
+                    submitAnswersBtn.classList.remove('hidden'); 
+                    evaluateMyUnderstandingBtn.classList.add('hidden'); 
+                    viewCorrectionBtn.classList.add('hidden'); 
+                    userAnswersInput.readOnly = false; 
+
+                    doTestModal.classList.remove('hidden');
+
+                    // Réinitialiser le minuteur et les boutons de contrôle du test
+                    clearInterval(timerInterval);
+                    secondsElapsed = 0;
+                    testTimer.textContent = formatTime(secondsElapsed);
+                    startTestBtn.classList.remove('hidden');
+                    finishTestBtn.classList.add('hidden');
+
+                    // Si le test était déjà en cours, restaurer le temps
+                    if (aiTest.status === 'in_progress' && aiTest.startTime) {
+                        const elapsedMs = new Date().getTime() - new Date(aiTest.startTime).getTime();
+                        secondsElapsed = Math.floor(elapsedMs / 1000);
+                        testTimer.textContent = formatTime(secondsElapsed);
+                        startTestBtn.classList.add('hidden');
+                        finishTestBtn.classList.remove('hidden');
+                        timerInterval = setInterval(updateTimer, 1000);
+                        showAlert('Test en cours. Le minuteur a repris là où vous l\'avez laissé.', 'Reprise du Test', 'info');
+                    } else if (aiTest.status === 'completed') {
+                        // Si le test est terminé, afficher la durée finale et l'évaluation IA si elle existe
+                        testTimer.textContent = formatTime(aiTest.duration || 0);
+                        startTestBtn.classList.add('hidden');
+                        finishTestBtn.classList.add('hidden'); 
+                        submitAnswersBtn.classList.add('hidden'); 
+                        userAnswersInput.readOnly = true; 
+
+                        if (aiTest.aiEvaluation) {
+                            aiEvaluationSection.classList.remove('hidden');
+                            aiEvaluationResult.textContent = aiTest.aiEvaluation;
+                            evaluateMyUnderstandingBtn.classList.remove('hidden'); 
+                        }
+                        if (aiTest.correction) { 
+                            viewCorrectionBtn.classList.remove('hidden');
+                        }
+                        showAlert('Ce test est déjà terminé. Durée : ' + formatTime(aiTest.duration || 0), 'Test Terminé', 'info');
+                    }
+                }
+            }
+        }
+
+        // Démarrer le minuteur
+        startTestBtn.addEventListener('click', () => {
+            if (currentAITestBeingAnswered) {
+                startTestBtn.classList.add('hidden');
+                finishTestBtn.classList.remove('hidden');
+                if (currentAITestBeingAnswered.status !== 'in_progress') {
+                    currentAITestBeingAnswered.status = 'in_progress';
+                    currentAITestBeingAnswered.startTime = new Date().toISOString();
+                    secondsElapsed = 0; 
+                }
+                timerInterval = setInterval(updateTimer, 1000);
+                saveDocuments(); 
+            }
+        });
+
+        // Mettre à jour le minuteur
+        function updateTimer() {
+            secondsElapsed++;
+            testTimer.textContent = formatTime(secondsElapsed);
+        }
+
+        // Terminer le minuteur et le test (cette action n'est plus la finalité du test, c'est juste la fin du temps)
+        finishTestBtn.addEventListener('click', async () => {
+            const confirmed = await showConfirm('Voulez-vous arrêter le minuteur ? Vous pourrez toujours soumettre vos réponses à l\'IA si ce n\'est pas déjà fait.', 'Terminer le Temps');
+            if (confirmed) {
+                clearInterval(timerInterval);
+                finishTestBtn.classList.add('hidden');
+                startTestBtn.classList.remove('hidden'); 
+                if (currentAITestBeingAnswered) {
+                    currentAITestBeingAnswered.endTime = new Date().toISOString();
+                    currentAITestBeingAnswered.duration = secondsElapsed; 
+                    saveDocuments();
+                    showAlert(`Minuteur arrêté. Durée enregistrée : ${formatTime(secondsElapsed)} !`, 'Minuteur Arrêté', 'info');
+                }
+            }
+        });
+
+        // Soumettre les réponses de l'utilisateur à l'IA pour évaluation
+        submitAnswersBtn.addEventListener('click', async () => {
+            const userAnswers = userAnswersInput.value.trim();
+            if (!userAnswers) {
+                showAlert("Veuillez taper vos réponses avant de soumettre à l'IA.", "Champs vide", 'warning');
+                return;
+            }
+
+            if (!currentAITestBeingAnswered || !currentDocumentForTest) {
+                showAlert("Erreur: Aucun test ou document actif pour l'évaluation AI.", "Erreur", 'error');
+                return;
+            }
+
+            aiEvaluationSection.classList.remove('hidden');
+            aiEvaluationLoading.classList.remove('hidden');
+            aiEvaluationResult.textContent = '';
+            submitAnswersBtn.disabled = true; 
+            userAnswersInput.readOnly = true; 
+
+            try {
+                const docOriginalContent = documents.find(d => d.id === currentDocumentForTest.id)?.content || "Contenu non trouvé.";
+
+                let prompt = `En tant qu'évaluateur expert et pédagogue, vous devez évaluer les réponses d'un apprenant à un test basé sur un document.
+Le test a été généré à partir du contenu original suivant :
+---
+Contenu original du document :
+${docOriginalContent}
+---
+
+Les questions du test AI étaient :
+---
+Test AI généré :
+${currentAITestBeingAnswered.content}
+---
+
+Voici les réponses de l'apprenant :
+---
+Réponses de l'apprenant :
+${userAnswers}
+---
+
+Veuillez attribuer une note de 1 à 5 à la compréhension de l'apprenant, en considérant la pertinence et l'exhaustivité de ses réponses par rapport au contenu original et aux questions posées.
+1 = Complètement à côté ou réponses vides.
+2 = Compréhension très limitée, beaucoup d'erreurs ou d'omissions.
+3 = Compréhension acceptable, quelques lacunes.
+4 = Bonne compréhension, quelques détails manquants ou imprécisions mineures.
+5 = Excellente compréhension, réponses précises et complètes.
+
+Après la note, fournissez une justification brève mais constructive, expliquant pourquoi cette note a été attribuée et ce qui pourrait être amélioré.
+Votre réponse doit commencer par "Note: X/5 - Justification: [Votre justification]".`;
+
+
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { contents: chatHistory };
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Erreur API lors de l\'évaluation AI:', response.status, response.statusText, errorData);
+                    aiEvaluationResult.textContent = `Erreur lors de l'évaluation AI (Code: ${response.status}). Veuillez réessayer. Détails: ${errorData.error?.message || 'Inconnu'}`;
+                    showAlert(`Erreur lors de l'évaluation du test: ${response.status}`, 'Erreur AI', 'error');
+                } else {
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const aiResponseText = result.candidates[0].content.parts[0].text;
+                        aiEvaluationResult.textContent = aiResponseText;
+
+                        // Extraire la note si possible
+                        const match = aiResponseText.match(/Note:\s*(\d)\/5/);
+                        if (match && match[1]) {
+                            const aiScore = parseInt(match[1]);
+                            currentAITestBeingAnswered.userAnswers = userAnswers;
+                            currentAITestBeingAnswered.aiEvaluation = aiResponseText;
+                            currentAITestBeingAnswered.aiScore = aiScore; 
+                            currentAITestBeingAnswered.status = 'completed'; 
+                            saveDocuments(); 
+                            evaluateMyUnderstandingBtn.classList.remove('hidden'); 
+                            viewCorrectionBtn.classList.remove('hidden'); 
+                            showAlert('Vos réponses ont été évaluées par l\'IA ! Vous pouvez maintenant évaluer votre compréhension générale.', 'Évaluation AI Reçue', 'success');
+                        } else {
+                            showAlert('L\'IA a fourni une réponse, mais la note n\'a pas pu être extraite automatiquement. Veuillez lire le feedback.', 'Évaluation AI Partielle', 'warning');
+                        }
+                    } else {
+                        console.error('Structure de réponse inattendue de l\'API Gemini pour l\'évaluation:', result);
+                        aiEvaluationResult.textContent = "Désolé, l'IA n'a pas pu évaluer vos réponses. La réponse de l'IA n'était pas au format attendu. Veuillez réessayer.";
+                        showAlert('La réponse de l\'IA était inattendue.', 'Erreur AI', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'appel de l\'API Gemini pour l\'évaluation:', error);
+                aiEvaluationResult.textContent = "Une erreur est survenue lors de l'évaluation par l'IA. Veuillez vérifier votre connexion internet ou réessayer plus tard.";
+                showAlert('Erreur de connexion lors de l\'évaluation par l\'IA.', 'Erreur Réseau', 'error');
+            } finally {
+                aiEvaluationLoading.classList.add('hidden');
+                submitAnswersBtn.disabled = false; 
+                renderAITests(); 
+            }
+        });
+
+        // Gérer le passage de la modale de réponse au test AI à la modale de révision
+        evaluateMyUnderstandingBtn.addEventListener('click', () => {
+            doTestModal.classList.add('hidden'); 
+
+            if (currentAITestBeingAnswered) {
+                const doc = documents.find(d => d.aiTests && d.aiTests.some(test => test.id === currentAITestBeingAnswered.id));
+                currentReviewingDocumentId = doc ? doc.id : null;
+
+                if (doc) {
+                    modalDocumentName.textContent = doc.name;
+                    modalDocumentContent.textContent = doc.content;
+                    reviewModal.classList.remove('hidden');
+                    scoreButtons.forEach(btn => btn.classList.remove('selected'));
+                    submitReviewBtn.disabled = true;
+
+                    // Tenter de pré-sélectionner le score de l'IA
+                    if (currentAITestBeingAnswered.aiScore !== undefined && currentAITestBeingAnswered.aiScore >= 1 && currentAITestBeingAnswered.aiScore <= 5) {
+                        const scoreBtn = document.querySelector(`.score-button[data-score="${currentAITestBeingAnswered.aiScore}"]`);
+                        if (scoreBtn) {
+                            scoreBtn.click(); 
+                        }
+                    } else {
+                        selectedScore = null;
+                        submitReviewBtn.disabled = true; 
+                    }
+                }
+            }
+        });
+
+        // Annuler/Fermer la modale de test AI
+        cancelDoTestBtn.addEventListener('click', async () => {
+            if (currentAITestBeingAnswered && currentAITestBeingAnswered.status === 'in_progress') {
+                const confirmed = await showConfirm('Le test est en cours. Si vous fermez, le minuteur s\'arrêtera mais votre progression sera sauvegardée. Voulez-vous continuer ?', 'Quitter le Test');
+                if (!confirmed) {
+                    return; 
+                }
+            }
+            clearInterval(timerInterval);
+            doTestModal.classList.add('hidden');
+            currentAITestBeingAnswered = null; 
+            currentDocumentForTest = null; 
+            // Nettoyer les champs et états de la modale pour la prochaine ouverture
+            userAnswersInput.value = '';
+            userAnswersInput.readOnly = false;
+            aiEvaluationSection.classList.add('hidden');
+            aiEvaluationResult.textContent = '';
+            aiEvaluationLoading.classList.add('hidden'); 
+            submitAnswersBtn.classList.remove('hidden');
+            evaluateMyUnderstandingBtn.classList.add('hidden');
+            viewCorrectionBtn.classList.add('hidden'); 
+            renderAITests(); 
+        });
+
+        // Logique de recherche et de filtre
+        searchDocumentInput.addEventListener('input', renderDocuments);
+        filterStatusSelect.addEventListener('change', renderDocuments);
+
+        // Exportation des données
+        exportDataBtn.addEventListener('click', () => {
+            const dataToExport = JSON.stringify(documents, null, 2);
+            const blob = new Blob([dataToExport], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rvsion_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showAlert('Vos données ont été exportées avec succès !', 'Exportation réussie', 'success');
+        });
+
+        // Importation des données
+        importDataBtn.addEventListener('click', () => {
+            importFileInput.click(); 
+        });
+
+        importFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        const confirmed = await showConfirm('Voulez-vous remplacer vos données actuelles par les données importées ? Cette action est irréversible.', 'Confirmation d\'importation');
+                        if (confirmed) {
+                            // Validation simple des données importées (vérifier qu'elles ressemblent à des documents)
+                            if (Array.isArray(importedData) && importedData.every(doc => doc.id && doc.name && doc.content)) {
+                                documents = importedData.map(doc => {
+                                    // S'assurer que les dates sont des objets Date après importation
+                                    doc.lastReviewed = new Date(doc.lastReviewed);
+                                    doc.nextReview = new Date(doc.nextReview);
+                                    doc.category = doc.category || 'Non classé'; 
+                                    doc.subcategory = doc.subcategory || 'Non classé';
+
+                                    if (doc.aiTests) {
+                                        doc.aiTests.forEach(test => {
+                                            test.generatedAt = new Date(test.generatedAt);
+                                            if (test.startTime) test.startTime = new Date(test.startTime);
+                                            if (test.endTime) test.endTime = new Date(test.endTime);
+                                            test.config.difficulty = test.config.difficulty || 'Moyen';
+                                            delete test.config.generalTheme;
+                                            delete test.config.specificTheme;
+                                        });
+                                    }
+                                    return doc;
+                                });
+                                saveDocuments();
+                                loadDocuments(); // Recharger pour assurer la cohérence des catégories après import
+                                showAlert('Données importées et chargées avec succès !', 'Importation réussie', 'success');
+                            } else {
+                                showAlert('Le fichier importé n\'est pas au format attendu.', 'Erreur d\'importation', 'error');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Erreur lors de l\'importation du fichier:', error);
+                        showAlert('Erreur lors de la lecture ou du traitement du fichier JSON. Assurez-vous que c\'est un fichier JSON valide.', 'Erreur d\'importation', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Nouveau : Gérer le clic sur le bouton "Voir le corrigé"
+        viewCorrectionBtn.addEventListener('click', async () => {
+            if (!currentAITestBeingAnswered || !currentDocumentForTest) {
+                showAlert("Erreur: Aucun test ou document actif pour générer le corrigé.", "Erreur", 'error');
+                return;
+            }
+
+            correctionModal.classList.remove('hidden');
+            correctionDocumentName.textContent = currentDocumentForTest.name;
+            correctionContent.textContent = ''; 
+            correctionLoading.classList.remove('hidden');
+
+            // Si le corrigé n'a pas encore été généré pour ce test, le générer
+            if (!currentAITestBeingAnswered.correction) {
+                try {
+                    const docOriginalContent = documents.find(d => d.id === currentDocumentForTest.id)?.content || "Contenu non trouvé.";
+                    const userAnswers = currentAITestBeingAnswered.userAnswers || 'Aucune réponse fournie.';
+
+                    let prompt = `En tant qu'expert en pédagogie, générez un corrigé détaillé pour le test suivant, basé sur le document original, les questions posées et les réponses de l'apprenant.
+Le corrigé doit expliquer les points clés pour chaque question, en fournissant les réponses correctes et des informations complémentaires si nécessaire.
+Il doit être clair, concis et aider l'apprenant à comprendre où se situent ses lacunes.
+
+---
+Contenu original du document :
+${docOriginalContent}
+---
+
+Questions du test :
+${currentAITestBeingAnswered.content}
+---
+
+Réponses de l'apprenant :
+${userAnswers}
+---
+
+Veuillez structurer le corrigé question par question.`;
+
+                    let chatHistory = [];
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                    const payload = { contents: chatHistory };
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        console.error('Erreur API lors de la génération du corrigé:', response.status, response.statusText, errorData);
+                        correctionContent.textContent = `Erreur lors de la génération du corrigé (Code: ${response.status}). Veuillez réessayer. Détails: ${errorData.error?.message || 'Inconnu'}`;
+                        showAlert(`Erreur lors de la génération du corrigé: ${response.status}`, 'Erreur AI', 'error');
+                    } else {
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            const aiResponseText = result.candidates[0].content.parts[0].text;
+                            currentAITestBeingAnswered.correction = aiResponseText; 
+                            saveDocuments(); 
+                            correctionContent.textContent = aiResponseText;
+                            showAlert('Corrigé généré avec succès !', 'Corrigé disponible', 'success');
+                        } else {
+                            console.error('Structure de réponse inattendue de l\'API Gemini pour le corrigé:', result);
+                            correctionContent.textContent = "Désolé, je n'ai pas pu générer le corrigé pour le moment. La réponse de l'IA n'était pas au format attendu. Veuillez réessayer.";
+                            showAlert('La réponse de l\'IA était inattendue.', 'Erreur AI', 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de l\'appel de l\'API Gemini pour le corrigé:', error);
+                    correctionContent.textContent = "Une erreur est survenue lors de la génération du corrigé. Veuillez vérifier votre connexion internet ou réessayer plus tard.";
+                    showAlert('Erreur de connexion lors de la génération du corrigé.', 'Erreur Réseau', 'error');
+                } finally {
+                    correctionLoading.classList.add('hidden');
+                }
+            } else {
+                // Si le corrigé existe déjà, l'afficher directement
+                correctionContent.textContent = currentAITestBeingAnswered.correction;
+                correctionLoading.classList.add('hidden');
+            }
+        });
+
+        // Gérer la fermeture de la modale de corrigé
+        closeCorrectionBtn.addEventListener('click', () => {
+            correctionModal.classList.add('hidden');
+        });
+
+        // NOUVEAU: Gestion des catégories et sous-catégories
+        manageCategoriesBtn.addEventListener('click', () => {
+            categoryManagementModal.classList.remove('hidden');
+            renderCategoriesList();
+        });
+
+        closeCategoryManagementBtn.addEventListener('click', () => {
+            categoryManagementModal.classList.add('hidden');
+            populateCategorySelectors(); // Rafraîchir les sélecteurs de document au cas où des catégories aient été ajoutées/supprimées
+            populateFilterCategorySelectors(); // Rafraîchir les sélecteurs de filtre
+        });
+
+        addCategoryBtn.addEventListener('click', () => {
+            const newCategoryName = newCategoryNameInput.value.trim();
+            if (newCategoryName) {
+                if (categories.some(cat => cat.name.toLowerCase() === newCategoryName.toLowerCase())) {
+                    showAlert('Cette catégorie existe déjà !', 'Doublon', 'warning');
+                    return;
+                }
+                categories.push({ id: crypto.randomUUID(), name: newCategoryName, subcategories: [] });
+                saveDocuments();
+                newCategoryNameInput.value = '';
+                renderCategoriesList();
+                showAlert('Catégorie ajoutée avec succès !', 'Succès', 'success');
+            } else {
+                showAlert('Veuillez entrer un nom pour la catégorie.', 'Champ vide', 'error');
+            }
+        });
+
+        function renderCategoriesList() {
+            categoriesList.innerHTML = '';
+            if (categories.length === 0) {
+                categoriesList.innerHTML = '<li class="text-gray-600 italic">Aucune catégorie pour l\'instant.</li>';
+                return;
+            }
+
+            categories.forEach(cat => {
+                const categoryItem = document.createElement('li');
+                categoryItem.className = 'bg-gray-100 p-3 rounded-lg shadow-sm';
+                categoryItem.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-semibold text-gray-800">${cat.name}</span>
+                        <div class="flex gap-2">
+                            <button data-category-id="${cat.id}" class="btn btn-secondary add-subcategory-btn">➕ Sous-catégorie</button>
+                            <button data-category-id="${cat.id}" class="btn btn-danger delete-category-btn">🗑️ Supprimer</button>
+                        </div>
+                    </div>
+                    <ul class="ml-4 mt-2 space-y-1" id="subcategories-list-${cat.id}">
+                        ${cat.subcategories.length > 0 ? 
+                            cat.subcategories.map(sub => `
+                                <li class="flex justify-between items-center bg-gray-200 p-2 rounded-md">
+                                    <span class="text-sm text-gray-700">${sub.name}</span>
+                                    <button data-category-id="${cat.id}" data-subcategory-id="${sub.id}" class="btn btn-danger text-xs px-2 py-1 delete-subcategory-btn">🗑️</button>
+                                </li>
+                            `).join('')
+                            : '<li class="text-gray-500 italic text-sm">Aucune sous-catégorie.</li>'
+                        }
+                    </ul>
+                `;
+                categoriesList.appendChild(categoryItem);
+            });
+            attachCategoryListEventListeners();
+        }
+
+        function attachCategoryListEventListeners() {
+            document.querySelectorAll('.add-subcategory-btn').forEach(button => {
+                button.removeEventListener('click', handleAddSubcategoryClick); // Éviter les doublons
+                button.addEventListener('click', handleAddSubcategoryClick);
+            });
+            document.querySelectorAll('.delete-category-btn').forEach(button => {
+                button.removeEventListener('click', handleDeleteCategoryClick); // Éviter les doublons
+                button.addEventListener('click', handleDeleteCategoryClick);
+            });
+            document.querySelectorAll('.delete-subcategory-btn').forEach(button => {
+                button.removeEventListener('click', handleDeleteSubcategoryClick); // Éviter les doublons
+                button.addEventListener('click', handleDeleteSubcategoryClick);
+            });
+        }
+
+        async function handleAddSubcategoryClick(event) {
+            const categoryId = event.target.dataset.categoryId;
+            const category = categories.find(cat => cat.id === categoryId);
+            if (category) {
+                const subcategoryName = prompt(`Ajouter une sous-catégorie pour "${category.name}" :`);
+                if (subcategoryName && subcategoryName.trim()) {
+                    if (category.subcategories.some(sub => sub.name.toLowerCase() === subcategoryName.trim().toLowerCase())) {
+                        showAlert('Cette sous-catégorie existe déjà !', 'Doublon', 'warning');
+                        return;
+                    }
+                    category.subcategories.push({ id: crypto.randomUUID(), name: subcategoryName.trim() });
+                    saveDocuments();
+                    renderCategoriesList();
+                    showAlert('Sous-catégorie ajoutée avec succès !', 'Succès', 'success');
+                } else if (subcategoryName !== null) { // Si l'utilisateur a annulé, prompt() retourne null
+                    showAlert('Veuillez entrer un nom pour la sous-catégorie.', 'Champ vide', 'error');
+                }
+            }
+        }
+
+        async function handleDeleteCategoryClick(event) {
+            const categoryId = event.target.dataset.categoryId;
+            const categoryToDelete = categories.find(cat => cat.id === categoryId);
+            if (categoryToDelete) {
+                const confirmed = await showConfirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${categoryToDelete.name}" et toutes ses sous-catégories ? Les documents associés seront "Non classés".`, 'Supprimer la catégorie');
+                if (confirmed) {
+                    categories = categories.filter(cat => cat.id !== categoryId);
+                    // Mettre à jour les documents pour qu'ils soient "Non classés" si leur catégorie est supprimée
+                    documents.forEach(doc => {
+                        if (doc.category === categoryToDelete.name) {
+                            doc.category = 'Non classé';
+                            doc.subcategory = 'Non classé'; // Supprimer aussi la sous-catégorie
+                        }
+                    });
+                    saveDocuments();
+                    renderCategoriesList();
+                    renderDocuments(); // Rafraîchir les documents affichés
+                    showAlert('Catégorie supprimée.', 'Succès', 'success');
+                }
+            }
+        }
+
+        async function handleDeleteSubcategoryClick(event) {
+            const categoryId = event.target.dataset.categoryId;
+            const subcategoryId = event.target.dataset.subcategoryId;
+            const category = categories.find(cat => cat.id === categoryId);
+
+            if (category) {
+                const subcategoryToDelete = category.subcategories.find(sub => sub.id === subcategoryId);
+                if (subcategoryToDelete) {
+                    const confirmed = await showConfirm(`Êtes-vous sûr de vouloir supprimer la sous-catégorie "${subcategoryToDelete.name}" ? Les documents associés seront "Non classés".`, 'Supprimer la sous-catégorie');
+                    if (confirmed) {
+                        category.subcategories = category.subcategories.filter(sub => sub.id !== subcategoryId);
+                        // Mettre à jour les documents pour qu'ils soient "Non classés" si leur sous-catégorie est supprimée
+                        documents.forEach(doc => {
+                            if (doc.subcategory === subcategoryToDelete.name && doc.category === category.name) {
+                                doc.subcategory = 'Non classé';
+                            }
+                        });
+                        saveDocuments();
+                        renderCategoriesList();
+                        renderDocuments(); // Rafraîchir les documents affichés
+                        showAlert('Sous-catégorie supprimée.', 'Succès', 'success');
+                    }
+                }
+            }
+        }
+
+        // Charger les documents au chargement de la page
+        window.onload = loadDocuments;
+    </script>
+</body>
+</html>
