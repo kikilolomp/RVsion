@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RVsion - Répétition Espacée & Tests AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* Styles personnalisés pour une meilleure lisibilité et esthétique */
         body {
@@ -83,16 +84,21 @@
         .document-content-display {
             background-color: #f9fafb;
             border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 1rem;
+            border-radius: 12px; /* Slightly more rounded */
+            padding: 1.5rem; /* Increased padding */
             margin-bottom: 1.5rem;
             max-height: 300px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-word;
+            /* NEW STYLES for readability */
+            font-family: 'Lato', sans-serif; /* Modern, clean font */
+            font-size: 1.05rem; /* Slightly larger text */
+            line-height: 1.6; /* Improved line spacing */
+            color: #374151; /* Darker grey for better contrast */
         }
         .loading-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
+            border: 4px rgba(0, 0, 0, 0.1);
             border-left-color: #2563eb;
             border-radius: 50%;
             width: 24px;
@@ -133,6 +139,113 @@
             color: #b45309;
             border: 1px solid #fcd34d;
         }
+
+        /* Styles spécifiques au quiz interactif */
+        .quiz-option {
+            @apply flex items-center p-3 rounded-lg border border-gray-300 cursor-pointer transition-colors duration-200;
+        }
+        .quiz-option:hover {
+            @apply bg-gray-100;
+        }
+        .quiz-option.selected {
+            @apply bg-blue-100 border-blue-500;
+        }
+        .quiz-option input[type="radio"] {
+            @apply mr-3;
+        }
+
+        /* Chat Message Animations */
+        .chat-message-user, .chat-message-ai {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideInFadeIn 0.3s ease-out forwards;
+        }
+
+        .chat-message-user {
+            background-color: #dbeafe; /* Blue-100 for user messages */
+            align-self: flex-end; /* Align to right */
+        }
+
+        .chat-message-ai {
+            background-color: #e5e7eb; /* Gray-200 for AI messages */
+            align-self: flex-start; /* Align to left */
+        }
+
+        @keyframes slideInFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Flashcard specific styles */
+        .flashcard-wrapper {
+            perspective: 1000px; /* Needed for 3D flip */
+            width: 100%;
+            height: 250px; /* Fixed height for the card */
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .flashcard-card {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+            border-radius: 1rem; /* Rounded corners */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+        }
+
+        .flashcard-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Hide back of the card during flip */
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .flashcard-front {
+            background: linear-gradient(135deg, #fef2f2, #fee2e2); /* Light red gradient */
+            border: 2px solid #fca5a5;
+        }
+
+        .flashcard-back {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0); /* Light green gradient */
+            border: 2px solid #6ee7b7;
+            transform: rotateY(180deg);
+            color: #065f46; /* Darker green for text */
+            font-style: normal;
+        }
+
+        .flashcard-text-content {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4">
@@ -153,7 +266,20 @@
                 </select>
 
                 <textarea id="documentContentInput" placeholder="Contenu du document (notes, concepts clés...)"
-                                rows="6" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                                rows="6" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                
+                <div class="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <label for="aiDocumentActionSelect" class="block text-sm font-medium text-blue-800 mb-2">Action AI sur le contenu (avant ajout) :</label>
+                    <select id="aiDocumentActionSelect" class="p-2 border border-blue-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="none">Ne rien faire (laisser normal)</option>
+                        <option value="develop">Développer/Créer le cours (à partir d'une idée)</option>
+                        <option value="optimize">Optimiser/Simplifier le cours (contenu existant)</option>
+                    </select>
+                </div>
+                <div id="aiDocumentActionLoading" class="flex justify-center items-center py-2 hidden">
+                    <div class="loading-spinner"></div>
+                    <p class="ml-2 text-blue-600">L'IA travaille sur votre contenu...</p>
+                </div>
                 <button id="addDocumentBtn" class="btn btn-primary">➕ Ajouter le document</button>
             </div>
             <div class="mt-4">
@@ -207,11 +333,28 @@
         </div>
     </div>
 
+    <!-- Modale de Révision -->
     <div id="reviewModal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3 class="text-xl font-semibold text-gray-800 mb-4">Révision de : <span id="modalDocumentName" class="font-bold text-blue-600"></span></h3>
             <div id="modalDocumentContent" class="document-content-display"></div>
-            <p class="text-gray-600 mb-6">Évaluez la facilité de la révision (1 = Oublié, 5 = Très facile)</p>
+            
+            <div class="mt-6 p-4 bg-gray-100 rounded-lg border border-gray-200">
+                <h4 class="text-lg font-semibold text-gray-700 mb-3">Posez une question à l'IA sur ce cours</h4>
+                <div id="aiChatDisplay" class="h-40 overflow-y-auto bg-white p-3 rounded-lg border border-gray-300 mb-3 flex flex-col space-y-2 text-sm">
+                    <p class="text-gray-500 italic text-center">Posez votre première question !</p>
+                </div>
+                <div id="aiChatLoading" class="flex justify-center items-center py-2 hidden">
+                    <div class="loading-spinner"></div>
+                    <p class="ml-2 text-blue-600">L'IA réfléchit...</p>
+                </div>
+                <div class="flex gap-2 mt-3">
+                    <input type="text" id="aiChatInput" placeholder="Votre question ici..."
+                           class="p-2 border border-gray-300 rounded-lg flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="sendAIChatBtn" class="btn btn-primary">Envoyer</button>
+                </div>
+            </div>
+            <p class="text-gray-600 mb-6 mt-6">Évaluez la facilité de la révision (1 = Oublié, 5 = Très facile)</p>
             <div class="flex justify-around gap-2 mb-6">
                 <button class="score-button bg-red-100 text-red-700" data-score="1">1</button>
                 <button class="score-button bg-orange-100 text-orange-700" data-score="2">2</button>
@@ -226,6 +369,7 @@
         </div>
     </div>
 
+    <!-- Modale de configuration du test AI -->
     <div id="testConfigModal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3 class="text-xl font-semibold text-gray-800 mb-4">Préparer le Test AI pour : <span id="testConfigDocumentName" class="font-bold text-blue-600"></span></h3>
@@ -253,6 +397,19 @@
                     </select>
                 </div>
                 <div>
+                    <label for="questionTypeInput" class="block text-sm font-medium text-gray-700 mb-1">Type de questions :</label>
+                    <select id="questionTypeInput" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="qcm">QCM (Questions à Choix Multiples)</option>
+                        <option value="written">Questions Écrites (Réponse Libre)</option>
+                        <option value="mixed">Mixte (QCM et Écrites)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="numQuestionsInput" class="block text-sm font-medium text-gray-700 mb-1">Nombre de questions (1-20) :</label>
+                    <input type="number" id="numQuestionsInput" value="5" min="1" max="20"
+                           class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
                     <label for="additionalContextInput" class="block text-sm font-medium text-gray-700 mb-1">Contexte ou instructions supplémentaires pour l'IA :</label>
                     <textarea id="additionalContextInput" placeholder="Ex: Pose des questions à choix multiples, Concentre-toi sur les dates..."
                                 rows="3" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
@@ -260,67 +417,70 @@
             </div>
             <div class="flex justify-end gap-4">
                 <button id="cancelTestConfigBtn" class="btn btn-secondary">Annuler</button>
-                <button id="generateTestBtn" class="btn btn-primary">✨ Générer le Test</button>
-            </div>
+                <button id="prepareInteractiveTestBtn" class="btn btn-primary">✨ Préparer le Test Interactif</button> </div>
         </div>
     </div>
 
-    <div id="testDisplayModal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">Test AI pour : <span id="testDisplayDocumentName" class="font-bold text-blue-600"></span></h3>
-            <div id="testLoading" class="flex justify-center items-center py-8">
-                <div class="loading-spinner"></div>
-                <p class="ml-4 text-gray-600">Génération du test par l'IA...</p>
-            </div>
-            <div id="testContent" class="document-content-display hidden"></div>
-            <div class="flex justify-end gap-4 mt-6">
-                <button id="cancelTestDisplayBtn" class="btn btn-secondary">Annuler</button>
-                <button id="saveGeneratedTestBtn" class="btn btn-primary hidden">💾 Sauvegarder le Test</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- Modale pour répondre au test AI (Interactive Quiz) -->
     <div id="doTestModal" class="modal-overlay hidden">
         <div class="modal-content">
-            <h3 class="text-xl font-semibold text-gray-800 mb-4">Répondre au Test AI : <span id="doTestDocumentName" class="font-bold text-blue-600"></span></h3>
-            <div class="flex justify-between items-center mb-4">
-                <span class="text-lg font-semibold text-gray-700">Temps écoulé : <span id="testTimer" class="font-bold text-blue-600">00:00:00</span></span>
-                <div class="flex gap-2">
-                    <button id="startTestBtn" class="btn btn-success">▶️ Commencer le test</button>
-                    <button id="finishTestBtn" class="btn btn-danger hidden">⏸️ Terminer le test</button>
-                </div>
-            </div>
-            <div class="mb-4">
-                <h4 class="text-lg font-semibold text-gray-700 mb-2">Questions du test :</h4>
-                <div id="doTestContent" class="document-content-display h-48">
-                    <p class="text-gray-500 italic">Le contenu du test apparaîtra ici. Cliquez sur "Commencer le test" pour démarrer le minuteur.</p>
-                </div>
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Test Interactif AI pour : <span id="doTestDocumentName" class="font-bold text-blue-600"></span></h3>
+            
+            <div id="quizGenerationLoading" class="flex justify-center items-center py-8 hidden">
+                <div class="loading-spinner"></div>
+                <p class="ml-4 text-gray-600">Génération du test interactif par l'IA...</p>
             </div>
 
-            <div class="mb-4">
-                <h4 class="text-lg font-semibold text-gray-700 mb-2">Mes réponses :</h4>
-                <textarea id="userAnswersInput" placeholder="Tapez vos réponses ici..."
-                                rows="8" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
-                <button id="submitAnswersBtn" class="btn btn-primary w-full mt-2">📊 Soumettre mes réponses à l'IA</button>
-            </div>
-
-            <div id="aiEvaluationSection" class="hidden mb-4">
-                <h4 class="text-lg font-semibold text-gray-700 mb-2">Évaluation de l'IA :</h4>
-                <div id="aiEvaluationLoading" class="flex justify-center items-center py-4 hidden">
-                    <div class="loading-spinner"></div>
-                    <p class="ml-4 text-gray-600">L'IA évalue vos réponses...</p>
+            <div id="quizDisplayArea" class="hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-lg font-semibold text-gray-700">Question <span id="currentQuestionNumber">1</span>/<span id="totalQuestions">X</span></span>
+                    <span class="text-lg font-semibold text-gray-700">Temps écoulé : <span id="testTimer" class="font-bold text-blue-600">00:00:00</span></span>
                 </div>
-                <div id="aiEvaluationResult" class="document-content-display bg-blue-50 border-blue-200"></div>
-            </div>
 
-            <div class="flex justify-end gap-4 mt-6">
-                <button id="cancelDoTestBtn" class="btn btn-secondary">Fermer</button>
-                <button id="viewCorrectionBtn" class="btn btn-info hidden">📚 Voir le corrigé</button>
-                <button id="evaluateMyUnderstandingBtn" class="btn btn-primary hidden">Évaluer ma compréhension (1-5)</button>
+                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p id="quizQuestionText" class="text-lg font-medium text-gray-800 mb-4"></p>
+                    <div id="quizQuestionOptions" class="flex flex-col space-y-3">
+                        </div>
+                    <div id="quizWrittenAnswerArea" class="hidden">
+                        <textarea id="quizWrittenAnswerInput" placeholder="Votre réponse ici..."
+                                  rows="6" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                    </div>
+                    <div id="quizMatchingArea" class="hidden">
+                        <p class="text-sm text-gray-500 italic mt-2">Les questions de type "relier" ne sont pas encore implémentées dans cette version.</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center mt-6">
+                    <button id="prevQuestionBtn" class="btn btn-secondary" disabled>← Précédent</button>
+                    <div class="flex gap-2">
+                        <button id="startQuizTimerBtn" class="btn btn-success">▶️ Démarrer le Quiz</button>
+                        <button id="nextQuestionBtn" class="btn btn-primary hidden">Suivant →</button>
+                        <button id="submitQuizBtn" class="btn btn-primary hidden">✓ Terminer le Quiz</button>
+                    </div>
+                </div>
+                <div class="flex justify-center mt-4">
+                    <button id="saveAndQuitQuizBtn" class="btn btn-secondary">💾 Sauvegarder et Quitter</button>
+                </div>
+
+
+                <div id="quizEvaluationArea" class="hidden mt-8 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <h4 class="text-lg font-semibold text-gray-700 mb-2">Résultats du Quiz :</h4>
+                    <div id="quizResultsSummary" class="text-gray-800 mb-4 document-content-display"></div>
+                    
+                    <h4 class="text-lg font-semibold text-gray-700 mb-2">Évaluation Détaillée de l'IA :</h4>
+                    <div id="quizAIEvaluation" class="text-gray-800 mb-4 document-content-display bg-blue-50 border-blue-200"></div>
+                    <div id="quizCorrectionContent" class="text-gray-800 mb-4 document-content-display bg-green-50 border-green-200"></div>
+
+                    <div class="flex justify-end gap-4 mt-6">
+                        <button id="closeQuizResultsBtn" class="btn btn-secondary">Fermer</button>
+                        <button id="reEvaluateUnderstandingBtn" class="btn btn-primary hidden">Évaluer ma compréhension (1-5)</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Modale de correction (non utilisée directement par le quiz interactif actuel) -->
     <div id="correctionModal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3 class="text-xl font-semibold text-gray-800 mb-4">Corrigé pour : <span id="correctionDocumentName" class="font-bold text-blue-600"></span></h3>
@@ -335,6 +495,7 @@
         </div>
     </div>
 
+    <!-- Modale de gestion des catégories -->
     <div id="categoryManagementModal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3 class="text-xl font-semibold text-gray-800 mb-4">Gérer les Catégories et Sous-catégories</h3>
@@ -348,8 +509,7 @@
             <div class="mb-4">
                 <h4 class="text-lg font-semibold text-gray-700 mb-2">Catégories existantes</h4>
                 <ul id="categoriesList" class="space-y-3">
-                    <!-- Categories will be rendered here -->
-                </ul>
+                    </ul>
             </div>
             <div class="flex justify-end gap-4">
                 <button id="closeCategoryManagementBtn" class="btn btn-secondary">Fermer</button>
@@ -357,6 +517,7 @@
         </div>
     </div>
 
+    <!-- Modale de confirmation personnalisée -->
     <div id="confirmModal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3 class="text-xl font-semibold text-gray-800 mb-4" id="confirmTitle">Confirmer</h3>
@@ -368,12 +529,45 @@
         </div>
     </div>
 
+    <!-- Modale d'alerte personnalisée -->
     <div id="customAlertModal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3 class="text-xl font-semibold text-gray-800 mb-4" id="alertTitle">Alerte</h3>
             <p class="text-gray-600 mb-6" id="alertMessage">Ceci est un message d'alerte.</p>
             <div class="flex justify-end">
                 <button id="closeAlertBtn" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale pour les Flashcards -->
+    <div id="flashcardModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Flashcards</h3>
+            <div id="flashcardLoading" class="flex justify-center items-center py-8 hidden">
+                <div class="loading-spinner"></div>
+                <p class="ml-4 text-gray-600">Génération des flashcards par l'IA...</p>
+            </div>
+            <div class="flashcard-wrapper mb-6">
+                <div id="flashcardCard" class="flashcard-card">
+                    <div id="flashcardFront" class="flashcard-front">
+                        <div id="flashcardQuestionDisplay" class="flashcard-text-content"></div>
+                    </div>
+                    <div id="flashcardBack" class="flashcard-back">
+                        <div id="flashcardAnswerDisplay" class="flashcard-text-content"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-center gap-4 mb-6">
+                <button id="flipFlashcardBtn" class="btn btn-warning">🔄 Retourner</button>
+            </div>
+            <div class="flex justify-between items-center mb-6">
+                <button id="prevFlashcardBtn" class="btn btn-secondary">← Précédent</button>
+                <span class="text-gray-700">Flashcard <span id="currentFlashcardIndexDisplay">0</span>/<span id="totalFlashcardsDisplay">0</span></span>
+                <button id="nextFlashcardBtn" class="btn btn-secondary">Suivant →</button>
+            </div>
+            <div class="flex justify-end">
+                <button id="closeFlashcardModalBtn" class="btn btn-primary">Fermer</button>
             </div>
         </div>
     </div>
@@ -399,17 +593,21 @@
         const documentSubcategorySelect = document.getElementById('documentSubcategorySelect');
         const documentContentInput = document.getElementById('documentContentInput');
         const addDocumentBtn = document.getElementById('addDocumentBtn');
-        const manageCategoriesBtn = document.getElementById('manageCategoriesBtn'); // Nouveau
+        const manageCategoriesBtn = document.getElementById('manageCategoriesBtn');
         const documentsDueTodayContainer = document.getElementById('documentsDueToday');
         const noDocumentsDueMessage = document.getElementById('noDocumentsDue');
         const allDocumentsList = document.getElementById('allDocumentsList');
         const noDocumentsYetMessage = document.getElementById('noDocumentsYet');
 
+        // NEW AI Document Action Elements
+        const aiDocumentActionSelect = document.getElementById('aiDocumentActionSelect');
+        const aiDocumentActionLoading = document.getElementById('aiDocumentActionLoading');
+
         // Éléments pour la recherche et le filtrage
         const searchDocumentInput = document.getElementById('searchDocumentInput');
         const filterStatusSelect = document.getElementById('filterStatusSelect');
-        const filterCategorySelect = document.getElementById('filterCategorySelect'); // Nouveau
-        const filterSubcategorySelect = document.getElementById('filterSubcategorySelect'); // Nouveau
+        const filterCategorySelect = document.getElementById('filterCategorySelect');
+        const filterSubcategorySelect = document.getElementById('filterSubcategorySelect');
 
         // Boutons d'import/export
         const exportDataBtn = document.getElementById('exportDataBtn');
@@ -424,42 +622,51 @@
         const cancelReviewBtn = document.getElementById('cancelReviewBtn');
         const submitReviewBtn = document.getElementById('submitReviewBtn');
 
+        // NEW AI Chat elements in reviewModal
+        const aiChatDisplay = document.getElementById('aiChatDisplay');
+        const aiChatInput = document.getElementById('aiChatInput');
+        const sendAIChatBtn = document.getElementById('sendAIChatBtn');
+        const aiChatLoading = document.getElementById('aiChatLoading');
+
+
         // Modale de configuration du test AI
         const testConfigModal = document.getElementById('testConfigModal');
         const testConfigDocumentName = document.getElementById('testConfigDocumentName');
         const studyLevelInput = document.getElementById('studyLevelInput');
-        const difficultyInput = document.getElementById('difficultyInput'); // Nouveau
+        const difficultyInput = document.getElementById('difficultyInput');
+        const questionTypeInput = document.getElementById('questionTypeInput'); 
+        const numQuestionsInput = document.getElementById('numQuestionsInput'); 
         const additionalContextInput = document.getElementById('additionalContextInput');
         const cancelTestConfigBtn = document.getElementById('cancelTestConfigBtn');
-        const generateTestBtn = document.getElementById('generateTestBtn');
+        const prepareInteractiveTestBtn = document.getElementById('prepareInteractiveTestBtn'); 
 
-        // Modale d'affichage du test AI après génération
-        const testDisplayModal = document.getElementById('testDisplayModal');
-        const testDisplayDocumentName = document.getElementById('testDisplayDocumentName');
-        const testLoading = document.getElementById('testLoading');
-        const testContent = document.getElementById('testContent');
-        const cancelTestDisplayBtn = document.getElementById('cancelTestDisplayBtn');
-        const saveGeneratedTestBtn = document.getElementById('saveGeneratedTestBtn');
-
-        // Modale pour répondre au test AI
+        // Modale pour répondre au test AI (Interactive Quiz) - Rénovée
         const doTestModal = document.getElementById('doTestModal');
         const doTestDocumentName = document.getElementById('doTestDocumentName');
-        const doTestContent = document.getElementById('doTestContent');
+        const quizGenerationLoading = document.getElementById('quizGenerationLoading'); 
+        const quizDisplayArea = document.getElementById('quizDisplayArea'); 
+        const currentQuestionNumber = document.getElementById('currentQuestionNumber'); 
+        const totalQuestions = document.getElementById('totalQuestions'); 
+        const quizQuestionText = document.getElementById('quizQuestionText'); 
+        const quizQuestionOptions = document.getElementById('quizQuestionOptions'); 
+        const quizWrittenAnswerArea = document.getElementById('quizWrittenAnswerArea'); 
+        const quizWrittenAnswerInput = document.getElementById('quizWrittenAnswerInput'); 
+        const quizMatchingArea = document.getElementById('quizMatchingArea'); 
+        const prevQuestionBtn = document.getElementById('prevQuestionBtn'); 
+        const startQuizTimerBtn = document.getElementById('startQuizTimerBtn'); 
+        const nextQuestionBtn = document.getElementById('nextQuestionBtn'); 
+        const submitQuizBtn = document.getElementById('submitQuizBtn'); 
         const testTimer = document.getElementById('testTimer');
-        const startTestBtn = document.getElementById('startTestBtn');
-        const finishTestBtn = document.getElementById('finishTestBtn');
-        const cancelDoTestBtn = document.getElementById('cancelDoTestBtn');
+        const quizEvaluationArea = document.getElementById('quizEvaluationArea'); 
+        const quizResultsSummary = document.getElementById('quizResultsSummary'); 
+        const quizAIEvaluation = document.getElementById('quizAIEvaluation'); 
+        const quizCorrectionContent = document.getElementById('quizCorrectionContent'); 
+        const closeQuizResultsBtn = document.getElementById('closeQuizResultsBtn'); 
+        const reEvaluateUnderstandingBtn = document.getElementById('reEvaluateUnderstandingBtn'); 
+        const saveAndQuitQuizBtn = document.getElementById('saveAndQuitQuizBtn'); 
+
         const aiTestsSavedList = document.getElementById('aiTestsSavedList');
         const noAITestsSavedMessage = document.getElementById('noAITestsSaved');
-
-        // Éléments de la modale de réponse au test AI
-        const userAnswersInput = document.getElementById('userAnswersInput');
-        const submitAnswersBtn = document.getElementById('submitAnswersBtn');
-        const aiEvaluationSection = document.getElementById('aiEvaluationSection');
-        const aiEvaluationLoading = document.getElementById('aiEvaluationLoading');
-        const aiEvaluationResult = document.getElementById('aiEvaluationResult');
-        const evaluateMyUnderstandingBtn = document.getElementById('evaluateMyUnderstandingBtn');
-        const viewCorrectionBtn = document.getElementById('viewCorrectionBtn');
 
         // Modale du corrigé
         const correctionModal = document.getElementById('correctionModal');
@@ -469,11 +676,11 @@
         const closeCorrectionBtn = document.getElementById('closeCorrectionBtn');
 
         // Modale de gestion des catégories
-        const categoryManagementModal = document.getElementById('categoryManagementModal'); // Nouveau
-        const newCategoryNameInput = document.getElementById('newCategoryNameInput'); // Nouveau
-        const addCategoryBtn = document.getElementById('addCategoryBtn'); // Nouveau
-        const categoriesList = document.getElementById('categoriesList'); // Nouveau
-        const closeCategoryManagementBtn = document.getElementById('closeCategoryManagementBtn'); // Nouveau
+        const categoryManagementModal = document.getElementById('categoryManagementModal');
+        const newCategoryNameInput = document.getElementById('newCategoryNameInput');
+        const addCategoryBtn = document.getElementById('addCategoryBtn');
+        const categoriesList = document.getElementById('categoriesList');
+        const closeCategoryManagementBtn = document.getElementById('closeCategoryManagementBtn');
 
         // Modale de confirmation personnalisée
         const confirmModal = document.getElementById('confirmModal');
@@ -488,19 +695,40 @@
         const alertMessage = document.getElementById('alertMessage');
         const closeAlertBtn = document.getElementById('closeAlertBtn');
 
-        let documents = []; // Tableau pour stocker tous les documents
-        // Nouvelle structure pour les catégories et sous-catégories
-        let categories = []; // [{ id: 'uuid', name: 'Informatique', subcategories: [{ id: 'uuid', name: 'Réseaux' }] }]
+        // Flashcard elements
+        const flashcardModal = document.getElementById('flashcardModal');
+        const flashcardCard = document.getElementById('flashcardCard'); // NEW
+        const flashcardFront = document.getElementById('flashcardFront'); // NEW
+        const flashcardBack = document.getElementById('flashcardBack'); // NEW
+        const flashcardQuestionDisplay = document.getElementById('flashcardQuestionDisplay');
+        const flashcardAnswerDisplay = document.getElementById('flashcardAnswerDisplay');
+        const flipFlashcardBtn = document.getElementById('flipFlashcardBtn');
+        const prevFlashcardBtn = document.getElementById('prevFlashcardBtn');
+        const nextFlashcardBtn = document.getElementById('nextFlashcardBtn');
+        const currentFlashcardIndexDisplay = document.getElementById('currentFlashcardIndexDisplay');
+        const totalFlashcardsDisplay = document.getElementById('totalFlashcardsDisplay');
+        const closeFlashcardModalBtn = document.getElementById('closeFlashcardModalBtn');
+        const flashcardLoading = document.getElementById('flashcardLoading');
 
-        let currentReviewingDocumentId = null; // ID du document en cours de révision
-        let selectedScore = null; // Score sélectionné dans la modale de révision
-        let currentDocumentForTest = null; // Document en cours de test AI (génération)
-        let currentAITestBeingAnswered = null; // Test AI en cours de réponse (pour le minuteur et l'évaluation)
-        let timerInterval; // Variable pour le minuteur
-        let secondsElapsed = 0; // Compteur de secondes pour le minuteur
+        let currentFlashcards = [];
+        let currentFlashcardIndex = 0;
+        let isFlashcardFlipped = false;
 
-        // API Key pour Gemini (sera injectée par Canvas au runtime)
-        const apiKey = ""; 
+
+        let documents = [];
+        let categories = [];
+
+        let currentReviewingDocumentId = null;
+        let selectedScore = null;
+        let currentDocumentForTest = null; 
+        let currentAITestBeingAnswered = null; 
+        let timerInterval;
+        let secondsElapsed = 0;
+
+        let currentQuestionIndex = 0; 
+
+        // API Key pour Gemini (votre clé que vous avez fournie)
+        const apiKey = "";
 
         /**
          * Affiche une modale d'alerte personnalisée.
@@ -513,10 +741,8 @@
             alertMessage.textContent = message;
             customAlertModal.classList.remove('hidden');
 
-            // Cibler le paragraphe contenant le message dans la modale d'alerte
             const alertParagraph = customAlertModal.querySelector('#alertMessage');
-            // Réinitialiser les classes de type et appliquer la nouvelle
-            alertParagraph.className = 'text-gray-600 mb-6'; // Reset initial
+            alertParagraph.className = 'text-gray-600 mb-6';
             const alertClasses = ['alert-message'];
             if (type === 'success') {
                 alertClasses.push('alert-success');
@@ -529,11 +755,6 @@
             }
             alertParagraph.className = alertClasses.join(' ');
         }
-
-        // Gérer la fermeture de la modale d'alerte
-        closeAlertBtn.addEventListener('click', () => {
-            customAlertModal.classList.add('hidden');
-        });
 
         /**
          * Affiche une modale de confirmation personnalisée.
@@ -566,57 +787,73 @@
             });
         }
 
-        // Charger les documents et catégories depuis le stockage local
         function loadDocuments() {
-            const storedDocs = localStorage.getItem('forgettingCurveDocuments');
-            if (storedDocs) {
-                documents = JSON.parse(storedDocs);
-                documents.forEach(doc => {
-                    doc.lastReviewed = new Date(doc.lastReviewed);
-                    doc.nextReview = new Date(doc.nextReview);
-                    // S'assurer que les propriétés existent pour les anciens documents et tests AI
-                    doc.category = doc.category || 'Non classé';
-                    doc.subcategory = doc.subcategory || 'Non classé';
+            try {
+                const storedDocs = localStorage.getItem('forgettingCurveDocuments');
+                if (storedDocs) {
+                    documents = JSON.parse(storedDocs);
+                    documents.forEach(doc => {
+                        doc.lastReviewed = new Date(doc.lastReviewed);
+                        doc.nextReview = new Date(doc.nextReview);
+                        doc.category = doc.category || 'Non classé';
+                        doc.subcategory = doc.subcategory || 'Non classé';
 
-                    if (doc.aiTests) {
-                        doc.aiTests.forEach(test => {
-                            test.generatedAt = new Date(test.generatedAt);
-                            if (test.startTime) test.startTime = new Date(test.startTime);
-                            if (test.endTime) test.endTime = new Date(test.endTime);
-                            test.config.difficulty = test.config.difficulty || 'Moyen';
-                            // Nettoyage des anciennes propriétés de thème si elles existent
-                            delete test.config.generalTheme;
-                            delete test.config.specificTheme;
-                        });
-                    }
-                });
-            }
+                        if (doc.aiTests) {
+                            doc.aiTests.forEach(test => {
+                                test.generatedAt = new Date(test.generatedAt);
+                                if (test.startTime) test.startTime = new Date(test.startTime);
+                                if (test.endTime) test.endTime = new Date(test.endTime);
+                                test.config = test.config || {}; 
+                                test.config.difficulty = test.config.difficulty || 'Moyen';
+                                test.config.questionType = test.config.questionType || 'qcm'; 
+                                test.config.numQuestions = test.config.numQuestions || 5; 
+                                test.currentQuestionIndex = test.currentQuestionIndex !== undefined ? test.currentQuestionIndex : 0;
+                                if (typeof test.content === 'string' && !test.structuredContent) {
+                                    test.structuredContent = null; 
+                                }
+                                delete test.config.generalTheme;
+                                delete test.config.specificTheme;
+                            });
+                        }
+                        doc.aiChatHistory = doc.aiChatHistory || [];
+                        doc.flashcards = doc.flashcards || []; 
+                        // Removed synthesis related initialization
+                    });
+                }
 
-            const storedCategories = localStorage.getItem('rvsionCategories');
-            if (storedCategories) {
-                categories = JSON.parse(storedCategories);
+                const storedCategories = localStorage.getItem('rvsionCategories');
+                if (storedCategories) {
+                    categories = JSON.parse(storedCategories);
+                }
+            } catch (e) {
+                console.error("Erreur lors du chargement des données depuis localStorage:", e);
+                showAlert("Impossible de charger les données. Le stockage local est peut-être bloqué ou corrompu. Assurez-vous d'accéder à l'application via un serveur HTTP.", "Erreur de chargement des données", "error");
+                documents = [];
+                categories = [];
             }
-            populateCategorySelectors(); // Remplir les sélecteurs de catégories au chargement de l'ajout de document
-            populateFilterCategorySelectors(); // Remplir les sélecteurs de filtre
+            populateCategorySelectors();
+            populateFilterCategorySelectors();
             renderDocuments();
             renderAITests();
+            initGlobalEventListeners(); 
         }
 
-        // Sauvegarder les documents et catégories dans le stockage local
         function saveDocuments() {
-            localStorage.setItem('forgettingCurveDocuments', JSON.stringify(documents));
-            localStorage.setItem('rvsionCategories', JSON.stringify(categories)); // Sauvegarder les catégories
+            try {
+                localStorage.setItem('forgettingCurveDocuments', JSON.stringify(documents));
+                localStorage.setItem('rvsionCategories', JSON.stringify(categories));
+            } catch (e) {
+                console.error("Erreur lors de la sauvegarde des données dans localStorage:", e);
+                showAlert("Impossible de sauvegarder les données. Le stockage local est peut-être bloqué ou plein. Vos changements pourraient ne pas être conservés.", "Erreur de sauvegarde des données", "warning");
+            }
         }
 
-        // Algorithme SM-2 simplifié pour la répétition espacée
-        // q: Qualité de la réponse (1-5)
-        // doc: Objet document à mettre à jour
         function calculateNextReview(doc, q) {
-            let ef = doc.easeFactor; // Facteur de facilité
-            let n = doc.consecutiveSuccessfulReviews; // Nombre de révisions réussies consécutives
-            let interval = doc.currentInterval; // Intervalle actuel en jours
+            let ef = doc.easeFactor;
+            let n = doc.consecutiveSuccessfulReviews;
+            let interval = doc.currentInterval;
 
-            if (q >= 3) { // Révision réussie
+            if (q >= 3) {
                 if (n === 0) {
                     interval = 1;
                 } else if (n === 1) {
@@ -624,32 +861,29 @@
                 } else {
                     interval = Math.round(interval * ef);
                 }
-                n++; // Incrémenter le nombre de révisions réussies
-            } else { // Révision échouée (q < 3)
-                n = 0; // Réinitialiser le nombre de révisions réussies
-                interval = 1; // Proposer à nouveau le lendemain
+                n++;
+            } else {
+                n = 0;
+                interval = 1;
             }
 
-            // Ajuster le facteur de facilité
             ef = ef + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
             if (ef < 1.3) {
-                ef = 1.3; // Le facteur de facilité ne doit pas descendre en dessous de 1.3
+                ef = 1.3;
             }
 
             doc.easeFactor = ef;
             doc.consecutiveSuccessfulReviews = n;
             doc.currentInterval = interval;
-            doc.lastReviewed = new Date(); // Date de la révision actuelle
+            doc.lastReviewed = new Date();
 
             const nextReviewDate = new Date();
             nextReviewDate.setDate(nextReviewDate.getDate() + interval);
-            doc.nextReview = nextReviewDate; // Prochaine date de révision
-            saveDocuments(); // Sauvegarder après chaque mise à jour
+            doc.nextReview = nextReviewDate;
+            saveDocuments();
         }
 
-        // Rendre les documents dans l'interface utilisateur
         function renderDocuments() {
-            // Réinitialiser les listes
             documentsDueTodayContainer.innerHTML = '';
             allDocumentsList.innerHTML = '';
             noDocumentsDueMessage.style.display = 'none';
@@ -662,13 +896,13 @@
             }
 
             const today = new Date();
-            today.setHours(0, 0, 0, 0); // Ignorer l'heure pour la comparaison
+            today.setHours(0, 0, 0, 0);
 
             let documentsDueCount = 0;
             const searchTerm = searchDocumentInput.value.toLowerCase();
             const filterStatus = filterStatusSelect.value;
-            const filterCategory = filterCategorySelect.value === 'all' ? null : categories.find(cat => cat.id === filterCategorySelect.value)?.name; // Nom de la catégorie sélectionnée
-            const filterSubcategory = filterSubcategorySelect.value === 'all' ? null : categories.find(cat => cat.id === filterCategorySelect.value)?.subcategories.find(sub => sub.id === filterSubcategorySelect.value)?.name; // Nom de la sous-catégorie sélectionnée
+            const filterCategory = filterCategorySelect.value === 'all' ? null : categories.find(cat => cat.id === filterCategorySelect.value)?.name;
+            const filterSubcategory = filterSubcategorySelect.value === 'all' ? null : categories.find(cat => cat.id === filterCategorySelect.value)?.subcategories.find(sub => sub.id === filterSubcategorySelect.value)?.name;
 
             const filteredDocuments = documents.filter(doc => {
                 const matchesSearch = doc.name.toLowerCase().includes(searchTerm) || 
@@ -705,10 +939,9 @@
             } else if (filteredDocuments.length === 0 && searchTerm.length === 0 && filterStatus === 'all' && filterCategory === null && filterSubcategory === null) {
                  noDocumentsYetMessage.style.display = 'block';
                  allDocumentsList.innerHTML = ''; 
-            } else if (filteredDocuments.length === 0) { // Catch all other empty cases for the main list
+            } else if (filteredDocuments.length === 0) {
                 allDocumentsList.innerHTML = '<p class="text-gray-600 italic">Aucun document ne correspond à vos critères de recherche/filtre.</p>';
             }
-
 
             filteredDocuments.forEach(doc => {
                 const nextReviewDate = new Date(doc.nextReview);
@@ -727,17 +960,15 @@
                     <div class="mt-4 flex justify-end gap-2">
                         <button data-id="${doc.id}" class="btn btn-success review-btn">📝 Réviser</button>
                         <button data-id="${doc.id}" class="btn btn-warning test-ai-btn">✨ Test (IA)</button>
+                        <button data-id="${doc.id}" class="btn btn-info flashcards-btn">🗂️ Flashcards</button>
                         <button data-id="${doc.id}" class="btn btn-danger delete-btn">🗑️ Supprimer</button>
                     </div>
                 `;
 
-                // Ajout dans la section "Documents à réviser aujourd'hui"
-                // Correction: matchesSearch et autres sont déjà pris en compte par filteredDocuments
-                if (isDueToday) { 
-                    documentsDueTodayContainer.appendChild(card.cloneNode(true)); // Cloner pour éviter de déplacer l'élément
+                if (isDueToday) {
+                    documentsDueTodayContainer.appendChild(card.cloneNode(true));
                     documentsDueCount++;
                 }
-                // Ajout dans la section "Tous mes documents" (après filtrage/recherche)
                 allDocumentsList.appendChild(card);
             });
 
@@ -750,10 +981,9 @@
                 noDocumentsYetMessage.style.display = 'none';
             }
 
-            addDocumentEventListeners(); // Ré-ajouter les écouteurs pour tous les boutons
+            addDocumentEventListeners();
         }
 
-        // Nouvelle fonction pour rendre les tests AI sauvegardés
         function renderAITests() {
             aiTestsSavedList.innerHTML = '';
             noAITestsSavedMessage.style.display = 'block';
@@ -761,6 +991,9 @@
             let aiTestsCount = 0;
             documents.forEach(doc => {
                 if (doc.aiTests && doc.aiTests.length > 0) {
+                    // Sort tests by generation date, newest first
+                    doc.aiTests.sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt));
+
                     doc.aiTests.forEach(aiTest => {
                         // N'afficher que les tests 'pending' ou 'in_progress' ou 'completed'
                         if (aiTest.status === 'pending' || aiTest.status === 'in_progress' || aiTest.status === 'completed') {
@@ -784,10 +1017,16 @@
 
                             let durationText = aiTest.duration ? `Durée: ${formatTime(aiTest.duration)}` : '';
                             let scoreText = aiTest.aiScore ? `Note AI: ${aiTest.aiScore}/5` : '';
+                            let typeText = '';
+                            if (aiTest.config.questionType === 'qcm') typeText = ' (QCM)';
+                            else if (aiTest.config.questionType === 'written') typeText = ' (Écrit)';
+                            else if (aiTest.config.questionType === 'mixed') typeText = ' (Mixte)';
+                            else typeText = ' (Interactif)';
+
 
                             testCard.innerHTML = `
                                 <h3 class="text-lg font-semibold mb-2 text-gray-900">Test AI pour : ${doc.name}</h3>
-                                <p class="text-sm text-gray-600">Catégorie: ${doc.category || 'Non classé'} | Sous-catégorie: ${doc.subcategory || 'Non classé'}</p>
+                                <p class="text-sm text-gray-600">Type: ${typeText} | Questions: ${aiTest.structuredContent?.questions?.length || 'N/A'} | Généré: ${formatDate(aiTest.generatedAt)}</p>
                                 <p class="text-sm text-gray-600">Difficulté: ${aiTest.config.difficulty || 'Non spécifiée'} | Niveau: ${aiTest.config.studyLevel || 'Non spécifié'}</p>
                                 <p class="text-xs text-gray-500 mt-1">Statut: <span class="font-bold ${statusClass}">${statusText}</span> ${durationText ? `| ${durationText}` : ''} ${scoreText ? `| ${scoreText}` : ''}</p>
                                 <div class="mt-4 flex justify-end gap-2">
@@ -804,10 +1043,9 @@
             if (aiTestsCount === 0) {
                 noAITestsSavedMessage.style.display = 'block';
             }
-            addAITestEventListeners(); // Ajouter les écouteurs d'événements pour les nouveaux boutons de test
+            addAITestEventListeners();
         }
 
-        // Fonction pour peupler les sélecteurs de catégorie et sous-catégorie lors de l'ajout de document
         function populateCategorySelectors() {
             documentCategorySelect.innerHTML = '<option value="">Sélectionner une catégorie</option>';
             categories.forEach(cat => {
@@ -816,32 +1054,10 @@
                 option.textContent = cat.name;
                 documentCategorySelect.appendChild(option);
             });
-            // Réinitialiser et désactiver la sous-catégorie par défaut
             documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>';
             documentSubcategorySelect.disabled = true;
         }
 
-        // Gérer le changement de catégorie pour peupler les sous-catégories (ajout de document)
-        documentCategorySelect.addEventListener('change', () => {
-            const selectedCategoryId = documentCategorySelect.value;
-            documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>';
-            documentSubcategorySelect.disabled = true;
-
-            if (selectedCategoryId) {
-                const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
-                if (selectedCategory && selectedCategory.subcategories.length > 0) {
-                    selectedCategory.subcategories.forEach(sub => {
-                        const option = document.createElement('option');
-                        option.value = sub.id;
-                        option.textContent = sub.name;
-                        documentSubcategorySelect.appendChild(option);
-                    });
-                    documentSubcategorySelect.disabled = false;
-                }
-            }
-        });
-
-        // NOUVEAU: Fonction pour peupler les sélecteurs de filtre par catégorie
         function populateFilterCategorySelectors() {
             filterCategorySelect.innerHTML = '<option value="all">Toutes catégories</option>';
             categories.forEach(cat => {
@@ -850,47 +1066,45 @@
                 option.textContent = cat.name;
                 filterCategorySelect.appendChild(option);
             });
-            // Réinitialiser et désactiver la sous-catégorie par défaut pour les filtres
             filterSubcategorySelect.innerHTML = '<option value="all">Toutes sous-catégories</option>';
             filterSubcategorySelect.disabled = true;
         }
-
-        // NOUVEAU: Gérer le changement de catégorie pour peupler les sous-catégories (filtre)
-        filterCategorySelect.addEventListener('change', () => {
-            const selectedCategoryId = filterCategorySelect.value;
-            filterSubcategorySelect.innerHTML = '<option value="all">Toutes sous-catégories</option>';
-            filterSubcategorySelect.disabled = true;
-
-            if (selectedCategoryId && selectedCategoryId !== 'all') {
-                const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
-                if (selectedCategory && selectedCategory.subcategories.length > 0) {
-                    selectedCategory.subcategories.forEach(sub => {
-                        const option = document.createElement('option');
-                        option.value = sub.id;
-                        option.textContent = sub.name;
-                        filterSubcategorySelect.appendChild(option);
-                    });
-                    filterSubcategorySelect.disabled = false;
-                }
-            }
-            renderDocuments(); // Mettre à jour l'affichage des documents après le changement de filtre
-        });
-
-        // NOUVEAU: Mettre à jour l'affichage des documents après le changement de filtre de sous-catégorie
-        filterSubcategorySelect.addEventListener('change', renderDocuments);
-
-
-        // Ajouter un nouveau document
-        addDocumentBtn.addEventListener('click', () => {
+        
+        addDocumentBtn.addEventListener('click', async () => {
             try {
                 const name = documentNameInput.value.trim();
                 const selectedCategoryId = documentCategorySelect.value;
                 const selectedSubcategoryId = documentSubcategorySelect.value;
-                const content = documentContentInput.value.trim();
+                let content = documentContentInput.value.trim();
+                const aiAction = aiDocumentActionSelect.value;
 
-                if (!name || !content) {
-                    showAlert('Veuillez entrer un nom ET un contenu pour le document.', 'Champs vides', 'error');
+                if (!name) {
+                    showAlert('Veuillez entrer un nom pour le document.', 'Champ vide', 'error');
                     return;
+                }
+                if (!content && (aiAction === 'none' || aiAction === 'optimize')) {
+                    showAlert('Veuillez entrer un contenu pour le document si l\'IA ne doit pas le développer ou l\'optimiser, ou sélectionnez "Développer/Créer le cours".', 'Contenu manquant', 'error');
+                    return;
+                }
+
+                if (aiAction !== 'none') {
+                    aiDocumentActionLoading.classList.remove('hidden');
+                    addDocumentBtn.disabled = true;
+                    try {
+                        content = await processDocumentContentWithAI(content, aiAction, name);
+                        documentContentInput.value = content;
+                        if (!content) {
+                            showAlert("L'IA n'a pas pu générer ou optimiser le contenu. Veuillez réessayer ou ajuster vos entrées.", "Échec de l'IA", "warning");
+                            return;
+                        }
+                    } catch (aiError) {
+                        console.error("Erreur lors du traitement AI du document:", aiError);
+                        showAlert("Une erreur est survenue lors du traitement AI du document. Veuillez réessayer.", "Erreur AI", "error");
+                        return;
+                    } finally {
+                        aiDocumentActionLoading.classList.add('hidden');
+                        addDocumentBtn.disabled = false;
+                    }
                 }
 
                 let categoryName = 'Non classé';
@@ -900,19 +1114,18 @@
                     const category = categories.find(cat => cat.id === selectedCategoryId);
                     if (category) {
                         categoryName = category.name;
-                        // Ensure subcategoryName is updated only if a valid subcategory is selected
-                        if (selectedSubcategoryId && selectedSubcategoryId !== "") { // Check for empty string value too
+                        if (selectedSubcategoryId && selectedSubcategoryId !== "") {
                             const subcategory = category.subcategories.find(sub => sub.id === selectedSubcategoryId);
                             if (subcategory) {
                                 subcategoryName = subcategory.name;
                             } else {
-                                subcategoryName = 'Non classé'; // Reset if ID doesn't match a subcategory (e.g. old data)
+                                subcategoryName = 'Non classé';
                             }
                         } else {
-                            subcategoryName = 'Non classé'; // If no subcategory selected (e.g. 'Sélectionner une sous-catégorie' option)
+                            subcategoryName = 'Non classé';
                         }
                     } else {
-                        categoryName = 'Non classé'; // Reset if category ID doesn't match (e.g. old data)
+                        categoryName = 'Non classé';
                         subcategoryName = 'Non classé';
                     }
                 }
@@ -928,22 +1141,81 @@
                     easeFactor: 2.5,
                     consecutiveSuccessfulReviews: 0,
                     currentInterval: 0,
-                    aiTests: []
+                    aiTests: [],
+                    aiChatHistory: [],
+                    flashcards: [] 
                 };
                 documents.push(newDoc);
                 saveDocuments();
                 renderDocuments();
                 documentNameInput.value = '';
-                documentCategorySelect.value = ''; // Réinitialiser le sélecteur
-                documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>'; // Réinitialiser
-                documentSubcategorySelect.disabled = true; // Désactiver
+                documentCategorySelect.value = '';
+                documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>';
+                documentSubcategorySelect.disabled = true;
                 documentContentInput.value = '';
+                aiDocumentActionSelect.value = 'none'; 
                 showAlert('Document ajouté avec succès !', 'Succès', 'success');
             } catch (error) {
                 console.error("Erreur lors de l'ajout du document:", error);
                 showAlert("Une erreur est survenue lors de l'ajout du document. Veuillez consulter la console pour plus de détails.", "Erreur d'ajout", 'error');
             }
         });
+
+        /**
+         * Appelle l'IA pour développer, optimiser ou simplifier le contenu d'un document.
+         * @param {string} originalContent Le contenu initial du document.
+         * @param {string} action L'action AI à effectuer ('develop', 'optimize').
+         * @param {string} documentName Le nom du document (pour le contexte de l'IA).
+         * @returns {Promise<string>} Le contenu traité par l'IA.
+         */
+        async function processDocumentContentWithAI(originalContent, action, documentName) {
+            let prompt = "";
+            if (action === 'develop') {
+                prompt = `En tant qu'expert en pédagogie, développez un cours complet et détaillé sur le sujet "${documentName}".
+Si un contenu initial est fourni ("${originalContent}"), utilisez-le comme point de départ pour enrichir et structurer le cours.
+Le cours doit être clair, bien organisé, et couvrir les aspects essentiels du sujet pour un apprentissage efficace.
+Utilisez le formatage Markdown (titres avec #, ##, etc., listes à puces avec -, listes numérotées avec 1., 2., etc., texte en gras avec **). Évitez les astérisques bruts pour les listes.`;
+            } else if (action === 'optimize') {
+                prompt = `En tant qu'expert en pédagogie, optimisez et simplifiez le contenu suivant pour le rendre plus clair, concis et facile à comprendre.
+Adaptez le langage à un niveau général d'apprenant. Reformulez les phrases complexes, supprimez les informations redondantes et structurez le texte pour une meilleure lisibilité.
+Utilisez le formatage Markdown (titres avec #, ##, etc., listes à puces avec -, listes numérotées avec 1., 2., etc., texte en gras avec **). Évitez les astérisques bruts pour les listes.
+Titre du document : ${documentName}
+Contenu à optimiser :
+---
+${originalContent}
+---
+Fournissez uniquement le contenu optimisé.`;
+            } else {
+                return originalContent;
+            }
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Erreur API lors du traitement AI du document:', response.status, response.statusText, errorData);
+                throw new Error(`Échec de l'IA: ${errorData.error?.message || response.statusText}`);
+            } else {
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error('Structure de réponse inattendue de l\'API Gemini pour le traitement du document:', result);
+                    throw new Error("L'IA a retourné une structure inattendue.");
+                }
+            }
+        }
 
         // Gérer les écouteurs d'événements pour tous les boutons des documents
         function addDocumentEventListeners() {
@@ -959,6 +1231,12 @@
                 button.removeEventListener('click', handleDeleteButtonClick);
                 button.addEventListener('click', handleDeleteButtonClick);
             });
+            // Add listeners for flashcards
+            document.querySelectorAll('.flashcards-btn').forEach(button => {
+                button.removeEventListener('click', handleFlashcardsButtonClick);
+                button.addEventListener('click', handleFlashcardsButtonClick);
+            });
+            // Removed synthesis button listener
         }
 
         // Gérer les écouteurs d'événements pour les tests AI
@@ -980,11 +1258,23 @@
             if (doc) {
                 currentReviewingDocumentId = docId;
                 modalDocumentName.textContent = doc.name;
-                modalDocumentContent.textContent = doc.content;
+                // Render Markdown content (if any) or plain text
+                const content = doc.content;
+                modalDocumentContent.innerHTML = marked.parse(content); 
+
                 reviewModal.classList.remove('hidden');
                 scoreButtons.forEach(btn => btn.classList.remove('selected'));
                 selectedScore = null;
                 submitReviewBtn.disabled = true;
+
+                aiChatDisplay.innerHTML = ''; 
+                if (doc.aiChatHistory && doc.aiChatHistory.length > 0) {
+                    doc.aiChatHistory.forEach(msg => displayChatMessage(msg.role, msg.text));
+                } else {
+                    aiChatDisplay.innerHTML = '<p class="text-gray-500 italic text-center">Posez votre première question !</p>';
+                }
+                aiChatInput.value = ''; 
+                aiChatDisplay.scrollTop = aiChatDisplay.scrollHeight; 
             }
         }
 
@@ -997,43 +1287,549 @@
                 testConfigDocumentName.textContent = doc.name;
                 // Réinitialiser les champs de la modale de configuration
                 studyLevelInput.value = '';
-                difficultyInput.value = 'Moyen'; // Valeur par défaut
+                difficultyInput.value = 'Moyen'; 
+                questionTypeInput.value = 'qcm';
+                numQuestionsInput.value = '5'; 
                 additionalContextInput.value = '';
                 testConfigModal.classList.remove('hidden');
             }
         }
 
-        // Gestionnaire pour le bouton "Générer le Test" dans la modale de configuration
-        generateTestBtn.addEventListener('click', async () => {
-            testConfigModal.classList.add('hidden'); // Cacher la modale de configuration
-            testDisplayModal.classList.remove('hidden'); // Afficher la modale d'affichage du test
-            testDisplayDocumentName.textContent = currentDocumentForTest.name;
-            testLoading.classList.remove('hidden');
-            testContent.classList.add('hidden');
-            saveGeneratedTestBtn.classList.add('hidden'); // Cacher le bouton de sauvegarde initialement
-            testContent.textContent = ''; // Vider le contenu précédent
+        prepareInteractiveTestBtn.addEventListener('click', async () => {
+            if (!currentDocumentForTest) {
+                showAlert("Erreur: Aucun document sélectionné pour préparer le test.", "Erreur", 'error');
+                return;
+            }
+
+            const numQuestions = parseInt(numQuestionsInput.value);
+            if (isNaN(numQuestions) || numQuestions < 1 || numQuestions > 20) {
+                showAlert("Veuillez entrer un nombre de questions valide entre 1 et 20.", "Nombre de questions invalide", "error");
+                return;
+            }
+
+            testConfigModal.classList.add('hidden');
+            doTestModal.classList.remove('hidden');
+
+            currentQuestionIndex = 0;
+            clearInterval(timerInterval);
+            secondsElapsed = 0;
+            testTimer.textContent = formatTime(secondsElapsed);
+            startQuizTimerBtn.classList.remove('hidden');
+            nextQuestionBtn.classList.add('hidden');
+            prevQuestionBtn.classList.add('hidden');
+            submitQuizBtn.classList.add('hidden');
+            saveAndQuitQuizBtn.classList.add('hidden'); 
+            quizDisplayArea.classList.add('hidden');
+            quizEvaluationArea.classList.add('hidden');
+            
+            quizGenerationLoading.classList.remove('hidden'); 
+
+            doTestDocumentName.textContent = currentDocumentForTest.name;
 
             const studyLevel = studyLevelInput.value.trim();
-            const difficulty = difficultyInput.value.trim(); 
+            const difficulty = difficultyInput.value.trim();
+            const questionType = questionTypeInput.value; 
             const additionalContext = additionalContextInput.value.trim();
 
             try {
-                let prompt = `En tant qu'expert en pédagogie, créez un court test d'auto-évaluation basé sur le document suivant.
-Le test doit comporter des questions variées (QCM, questions ouvertes courtes, vrai/faux) et être adapté pour aider l'apprenant à évaluer sa compréhension.
-N'incluez pas les réponses ni de corrigé dans ce test initial. Le but est de le faire réfléchir au contenu avant de s'auto-évaluer ou de voir un corrigé.
-Le test doit être clair et concis.
+                let prompt = `En tant qu'expert en pédagogie, créez un quiz interactif basé sur le document suivant.
+                Le quiz doit être composé de ${numQuestions} questions.
+                `;
 
+                let responseSchema = {
+                    type: "OBJECT",
+                    properties: {
+                        "quizTitle": { "type": "STRING" },
+                        "questions": {
+                            "type": "ARRAY",
+                            "items": {
+                                "type": "OBJECT",
+                                "properties": {
+                                    "id": { "type": "STRING" },
+                                    "type": { "type": "STRING", "enum": ["qcm", "written", "matching"] }, 
+                                    "text": { "type": "STRING" },
+                                    "options": { 
+                                        "type": "ARRAY",
+                                        "items": {
+                                            "type": "OBJECT",
+                                            "properties": {
+                                                "id": { "type": "STRING" },
+                                                "text": { "type": "STRING" }
+                                            },
+                                            "required": ["id", "text"]
+                                        }
+                                    },
+                                    "correctAnswerId": { "type": "STRING" }, 
+                                    "correctAnswerText": { "type": "STRING" } 
+                                },
+                                "required": ["id", "type", "text"], 
+                                "propertyOrdering": ["id", "type", "text", "options", "correctAnswerId", "correctAnswerText"]
+                            }
+                        }
+                    },
+                    "required": ["quizTitle", "questions"],
+                    "propertyOrdering": ["quizTitle", "questions"]
+                };
+
+
+                if (questionType === 'qcm' || questionType === 'mixed') {
+                    prompt += ` Pour les questions à choix multiples (QCM), chaque question doit avoir 4 options de réponse, et une seule doit être correcte. La réponse correcte doit être clairement indiquée par son ID.`;
+                }
+                if (questionType === 'written' || questionType === 'mixed') {
+                    prompt += ` Pour les questions écrites, fournissez la réponse correcte sous forme de texte dans le champ 'correctAnswerText'.`;
+                }
+
+                if (questionType === 'qcm') {
+                    prompt += ` Toutes les questions doivent être des QCM.`;
+                } else if (questionType === 'written') {
+                    prompt += ` Toutes les questions doivent être des questions écrites (réponse libre).`;
+                } else if (questionType === 'mixed') {
+                    prompt += ` Le quiz doit inclure un mélange de questions QCM et de questions écrites.`;
+                }
+
+
+                prompt += `
 Titre du document : ${currentDocumentForTest.name}
 Catégorie du document : ${currentDocumentForTest.category || 'Non spécifiée'}
 Sous-catégorie du document : ${currentDocumentForTest.subcategory || 'Non spécifiée'}
-Contenu du document : ${currentDocumentForTest.content}
+Contenu du document :
+---
+${currentDocumentForTest.content}
+---
 
 Informations supplémentaires pour adapter le test :
 Niveau d'étude de l'apprenant : ${studyLevel || 'Non spécifié'}
 Niveau de difficulté souhaité pour le test : ${difficulty || 'Moyen'}
+Nombre de questions : ${numQuestions}
 Contexte ou instructions supplémentaires : ${additionalContext || 'Aucun'}
+`; 
 
-Le test doit être formaté de manière simple, avec des questions numérotées.`;
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+                const payload = { 
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: responseSchema 
+                    }
+                };
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Erreur API lors de la génération du quiz interactif:', response.status, response.statusText, errorData);
+                    showAlert(`Erreur lors de la génération du quiz: ${response.status}. Veuillez réessayer. Détails: ${errorData.error?.message || 'Inconnu'}`, 'Erreur AI', 'error');
+                    quizGenerationLoading.classList.add('hidden');
+                    doTestModal.classList.add('hidden'); 
+                } else {
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        try {
+                            const quizData = JSON.parse(result.candidates[0].content.parts[0].text);
+                            if (quizData.questions && Array.isArray(quizData.questions) && quizData.questions.length > 0) {
+                                const newAITest = {
+                                    id: crypto.randomUUID(),
+                                    generatedAt: new Date().toISOString(),
+                                    content: `Test Interactif (${questionTypeInput.value} - ${numQuestions} questions)`, 
+                                    structuredContent: quizData, 
+                                    config: {
+                                        studyLevel: studyLevel,
+                                        difficulty: difficulty,
+                                        questionType: questionType, 
+                                        numQuestions: numQuestions, 
+                                        additionalContext: additionalContext,
+                                    },
+                                    status: 'pending', 
+                                    startTime: null,
+                                    endTime: null,
+                                    duration: null,
+                                    userAnswers: Array(quizData.questions.length).fill(null), 
+                                    aiEvaluation: null,
+                                    aiScore: null,
+                                    correction: null,
+                                    currentQuestionIndex: 0 
+                                };
+                                const docIndex = documents.findIndex(d => d.id === currentDocumentForTest.id);
+                                if (!documents[docIndex].aiTests) {
+                                    documents[doc个体].aiTests = [];
+                                }
+                                documents[docIndex].aiTests.push(newAITest);
+                                saveDocuments();
+
+                                currentAITestBeingAnswered = newAITest; 
+                                totalQuestions.textContent = quizData.questions.length; 
+                                renderQuestion(currentQuestionIndex); 
+                                quizDisplayArea.classList.remove('hidden');
+                                saveAndQuitQuizBtn.classList.remove('hidden'); 
+                                showAlert('Quiz interactif généré avec succès ! Cliquez sur "Démarrer le Quiz" pour commencer.', 'Succès AI', 'success');
+                            } else {
+                                showAlert('L\'IA a généré un quiz vide ou mal formaté. Veuillez réessayer.', 'Erreur AI', 'error');
+                                doTestModal.classList.add('hidden');
+                            }
+                        } catch (parseError) {
+                            console.error('Erreur lors du parsing JSON du quiz:', parseError);
+                            showAlert('L\'IA a retourné un format JSON invalide pour le quiz. Veuillez réessayer.', 'Erreur de format AI', 'error');
+                            doTestModal.classList.add('hidden');
+                        }
+                    } else {
+                        console.error('Structure de réponse inattendue de l\'API Gemini pour le quiz:', result);
+                        showAlert('La réponse de l\'IA était inattendue pour le quiz. Veuillez réessayer.', 'Erreur AI', 'error');
+                        doTestModal.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'appel de l\'API Gemini pour le quiz:', error);
+                showAlert('Une erreur est survenue lors de la génération du quiz. Veuillez vérifier votre connexion internet ou réessayer plus tard.', 'Erreur Réseau', 'error');
+                doTestModal.classList.add('hidden');
+            } finally {
+                quizGenerationLoading.classList.add('hidden');
+            }
+        });
+
+        /**
+         * Affiche la question actuelle du quiz interactif.
+         * @param {number} index L'index de la question à afficher.
+         */
+        function renderQuestion(index) {
+            const quiz = currentAITestBeingAnswered.structuredContent;
+            if (!quiz || !quiz.questions || index < 0 || index >= quiz.questions.length) {
+                showAlert("Erreur: Question introuvable.", "Erreur Quiz", "error");
+                return;
+            }
+
+            const question = quiz.questions[index];
+            currentQuestionNumber.textContent = index + 1;
+            // Use marked.parse for quiz question text
+            quizQuestionText.innerHTML = marked.parse(question.text);
+            
+            quizQuestionOptions.classList.add('hidden');
+            quizWrittenAnswerArea.classList.add('hidden');
+            quizMatchingArea.classList.add('hidden');
+
+            if (question.type === 'qcm') {
+                quizQuestionOptions.classList.remove('hidden');
+                quizQuestionOptions.innerHTML = ''; 
+                question.options.forEach(option => {
+                    const optionDiv = document.createElement('label');
+                    optionDiv.className = 'quiz-option';
+                    // Use marked.parse for QCM option text
+                    optionDiv.innerHTML = `
+                        <input type="radio" name="currentQuestion" value="${option.id}" class="form-radio text-blue-600">
+                        <span>${marked.parse(option.text)}</span>
+                    `;
+                    quizQuestionOptions.appendChild(optionDiv);
+
+                    if (currentAITestBeingAnswered.userAnswers[index] === option.id) {
+                        optionDiv.classList.add('selected');
+                        optionDiv.querySelector('input').checked = true;
+                    }
+
+                    optionDiv.addEventListener('click', () => {
+                        if (currentAITestBeingAnswered.status !== 'completed') {
+                            quizQuestionOptions.querySelectorAll('.quiz-option').forEach(opt => opt.classList.remove('selected'));
+                            optionDiv.classList.add('selected');
+                            optionDiv.querySelector('input').checked = true;
+                            currentAITestBeingAnswered.userAnswers[index] = option.id;
+                            currentAITestBeingAnswered.currentQuestionIndex = index;
+                            saveDocuments(); 
+                        }
+                    });
+                });
+            } else if (question.type === 'written') {
+                quizWrittenAnswerArea.classList.remove('hidden');
+                quizWrittenAnswerInput.value = currentAITestBeingAnswered.userAnswers[index] || ''; 
+                quizWrittenAnswerInput.oninput = (event) => {
+                    if (currentAITestBeingAnswered.status !== 'completed') {
+                        currentAITestBeingAnswered.userAnswers[index] = event.target.value;
+                        currentAITestBeingAnswered.currentQuestionIndex = index;
+                        saveDocuments();
+                    }
+                };
+            } else if (question.type === 'matching') {
+                quizMatchingArea.classList.remove('hidden');
+            } else {
+                quizQuestionText.textContent = `Type de question "${question.type}" non supporté pour l'instant.`;
+            }
+
+            prevQuestionBtn.disabled = (index === 0);
+            nextQuestionBtn.classList.toggle('hidden', index === quiz.questions.length - 1);
+            submitQuizBtn.classList.toggle('hidden', index !== quiz.questions.length - 1);
+
+            if (currentAITestBeingAnswered.status === 'completed') {
+                quizQuestionOptions.querySelectorAll('input').forEach(input => input.disabled = true);
+                quizWrittenAnswerInput.disabled = true;
+                saveAndQuitQuizBtn.classList.add('hidden'); 
+            } else {
+                quizWrittenAnswerInput.disabled = false;
+            }
+        }
+
+        function handleDoAITestButtonClick(event) {
+            const docId = event.target.dataset.docId;
+            const testId = event.target.dataset.testId;
+
+            const doc = documents.find(d => d.id === docId);
+            if (doc && doc.aiTests) {
+                const aiTest = doc.aiTests.find(test => test.id === testId);
+                if (aiTest) {
+                    currentAITestBeingAnswered = aiTest;
+                    currentDocumentForTest = doc; 
+
+                    doTestDocumentName.textContent = doc.name;
+                    
+                    quizGenerationLoading.classList.add('hidden');
+
+                    if (aiTest.structuredContent) { 
+                        quizDisplayArea.classList.remove('hidden');
+                        quizEvaluationArea.classList.add('hidden'); 
+                        totalQuestions.textContent = aiTest.structuredContent.questions.length;
+                        
+                        currentQuestionIndex = aiTest.currentQuestionIndex !== undefined ? aiTest.currentQuestionIndex : 0;
+                        renderQuestion(currentQuestionIndex);
+
+                        clearInterval(timerInterval);
+                        secondsElapsed = aiTest.duration || 0; 
+                        testTimer.textContent = formatTime(secondsElapsed);
+                        
+                        // Reset button states
+                        startQuizTimerBtn.classList.remove('hidden');
+                        startQuizTimerBtn.textContent = '▶️ Démarrer le Quiz'; // Default text
+                        nextQuestionBtn.classList.add('hidden');
+                        prevQuestionBtn.classList.add('hidden');
+                        submitQuizBtn.classList.add('hidden');
+                        saveAndQuitQuizBtn.classList.remove('hidden'); 
+
+                        if (aiTest.status === 'in_progress') {
+                            startQuizTimerBtn.textContent = '▶️ Reprendre le Quiz'; // Change text for resuming
+                            // Show nav/submit buttons according to current question index and total questions
+                            if (aiTest.structuredContent.questions.length > 1) {
+                                nextQuestionBtn.classList.remove('hidden');
+                                prevQuestionBtn.classList.remove('hidden');
+                            }
+                            if (currentQuestionIndex === aiTest.structuredContent.questions.length - 1) {
+                                submitQuizBtn.classList.remove('hidden');
+                                nextQuestionBtn.classList.add('hidden');
+                            }
+                            // Don't auto-start timer, user must click "Reprendre"
+                            showAlert('Quiz interactif en cours. Cliquez sur "Reprendre le Quiz" pour continuer.', 'Reprise du Quiz', 'info');
+
+                        } else if (aiTest.status === 'completed') {
+                            testTimer.textContent = formatTime(aiTest.duration || 0);
+                            startQuizTimerBtn.classList.add('hidden');
+                            nextQuestionBtn.classList.add('hidden');
+                            prevQuestionBtn.classList.add('hidden');
+                            submitQuizBtn.classList.add('hidden');
+                            saveAndQuitQuizBtn.classList.add('hidden'); 
+                            quizQuestionOptions.querySelectorAll('input').forEach(input => input.disabled = true); 
+                            quizWrittenAnswerInput.disabled = true;
+
+                            quizEvaluationArea.classList.remove('hidden');
+                            if (aiTest.aiEvaluation) {
+                                const aiResponseText = aiTest.aiEvaluation;
+                                const scoreMatch = aiResponseText.match(/Score Final:\s*(\d+)\/(\d+)/); 
+                                const noteMatch = aiResponseText.match(/Note de Compréhension \(1-5\):\s*(\d)\/5/);
+                                const evaluationMatch = aiResponseText.match(/Évaluation de l'IA:\s*([\s\S]*?)(?=Corrigé Détaillé:|$)/);
+                                const correctionMatch = aiResponseText.match(/Corrigé Détaillé:\s*([\s\S]*)/);
+
+                                let scoreFinal = scoreMatch ? `${scoreMatch[1]}/${scoreMatch[2]}` : 'N/A';
+                                let noteComprehension = noteMatch ? parseInt(noteMatch[1]) : 'N/A';
+                                let evaluationContent = evaluationMatch ? evaluationMatch[1].trim() : 'Non disponible.';
+                                let correctionContent = correctionMatch ? correctionMatch[1].trim() : 'Non disponible.';
+
+                                quizResultsSummary.innerHTML = marked.parse(`**Score Final:** ${scoreFinal} | **Note de Compréhension:** ${noteComprehension}/5`);
+                                quizAIEvaluation.innerHTML = marked.parse(evaluationContent);
+                                quizCorrectionContent.innerHTML = marked.parse(correctionContent);
+                                quizAIEvaluation.classList.remove('hidden');
+                                quizCorrectionContent.classList.remove('hidden');
+                                reEvaluateUnderstandingBtn.classList.remove('hidden');
+                            } else {
+                                quizResultsSummary.textContent = "Résultats de l'évaluation AI non disponibles.";
+                            }
+                            showAlert('Ce quiz est déjà terminé. Durée : ' + formatTime(aiTest.duration || 0), 'Quiz Terminé', 'info');
+                        } else { 
+                            // Status 'pending'
+                            startQuizTimerBtn.textContent = '▶️ Démarrer le Quiz'; // Ensure it says Start
+                            saveAndQuitQuizBtn.classList.remove('hidden'); // Ensure visible
+                        }
+                    } else { 
+                        showAlert("Ce test est un ancien format texte. Veuillez utiliser la fonctionnalité de révision pour le document lié si vous souhaitez le revoir.", "Ancien format de test", "warning");
+                        doTestModal.classList.add('hidden'); 
+                    }
+                    doTestModal.classList.remove('hidden');
+                }
+            }
+        }
+
+
+        // Navigation Suivant / Précédent
+        nextQuestionBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < currentAITestBeingAnswered.structuredContent.questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        prevQuestionBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion(currentQuestionIndex);
+            }
+        });
+
+        // Démarrer ou Reprendre le minuteur du quiz
+        startQuizTimerBtn.addEventListener('click', () => {
+            if (currentAITestBeingAnswered) {
+                startQuizTimerBtn.classList.add('hidden');
+                saveAndQuitQuizBtn.classList.remove('hidden'); 
+                if (currentAITestBeingAnswered.status !== 'in_progress') {
+                    currentAITestBeingAnswered.status = 'in_progress';
+                    currentAITestBeingAnswered.startTime = new Date().toISOString();
+                }
+                timerInterval = setInterval(updateTimer, 1000);
+                saveDocuments();
+                if (currentAITestBeingAnswered.structuredContent.questions.length > 1) {
+                    nextQuestionBtn.classList.remove('hidden');
+                    prevQuestionBtn.classList.remove('hidden');
+                }
+                if (currentQuestionIndex === currentAITestBeingAnswered.structuredContent.questions.length - 1) {
+                    submitQuizBtn.classList.remove('hidden');
+                    nextQuestionBtn.classList.add('hidden');
+                }
+                showAlert('Quiz démarré/repris ! Bonne chance.', 'Quiz En Cours', 'info');
+            }
+        });
+
+        // Mettre à jour le minuteur
+        function updateTimer() {
+            secondsElapsed++;
+            testTimer.textContent = formatTime(secondsElapsed);
+        }
+
+        // Sauvegarder et Quitter le Quiz
+        saveAndQuitQuizBtn.addEventListener('click', async () => {
+            if (!currentAITestBeingAnswered) {
+                showAlert("Erreur: Aucun quiz actif à sauvegarder.", "Erreur", 'error');
+                return;
+            }
+
+            const confirmed = await showConfirm('Voulez-vous sauvegarder votre progression et quitter le quiz ? Vous pourrez le reprendre plus tard.', 'Sauvegarder et Quitter');
+            if (!confirmed) {
+                return;
+            }
+
+            clearInterval(timerInterval);
+            currentAITestBeingAnswered.duration = secondsElapsed; 
+            currentAITestBeingAnswered.status = 'in_progress'; 
+            currentAITestBeingAnswered.currentQuestionIndex = currentQuestionIndex; 
+            saveDocuments();
+            doTestModal.classList.add('hidden');
+            currentAITestBeingAnswered = null; 
+            currentDocumentForTest = null; 
+            renderAITests(); 
+            showAlert('Quiz sauvegardé ! Vous pourrez le reprendre depuis la liste "Mes Tests AI".', 'Sauvegarde Réussie', 'success');
+        });
+
+
+        // Terminer le quiz et soumettre les réponses à l'IA pour évaluation
+        submitQuizBtn.addEventListener('click', async () => {
+            if (!currentAITestBeingAnswered || !currentDocumentForTest) {
+                showAlert("Erreur: Aucun quiz ou document actif pour l'évaluation AI.", "Erreur", 'error');
+                return;
+            }
+
+            const confirmed = await showConfirm('Voulez-vous terminer le quiz et soumettre vos réponses pour évaluation ?', 'Confirmer la fin du Quiz');
+            if (!confirmed) {
+                return;
+            }
+
+            clearInterval(timerInterval);
+            currentAITestBeingAnswered.endTime = new Date().toISOString();
+            currentAITestBeingAnswered.duration = secondsElapsed;
+            currentAITestBeingAnswered.currentQuestionIndex = currentQuestionIndex; 
+
+            startQuizTimerBtn.classList.add('hidden'); 
+            nextQuestionBtn.classList.add('hidden'); 
+            prevQuestionBtn.classList.add('hidden'); 
+            submitQuizBtn.classList.add('hidden'); 
+            saveAndQuitQuizBtn.classList.add('hidden'); 
+
+            quizQuestionOptions.querySelectorAll('input').forEach(input => input.disabled = true); 
+            quizWrittenAnswerInput.disabled = true;
+
+            quizEvaluationArea.classList.remove('hidden');
+            quizAIEvaluation.textContent = '';
+            quizCorrectionContent.textContent = '';
+            quizResultsSummary.textContent = '';
+            quizGenerationLoading.classList.add('hidden'); 
+            quizAIEvaluation.classList.add('hidden'); 
+            quizCorrectionContent.classList.add('hidden'); 
+            
+            const evaluationSpinner = document.createElement('div');
+            evaluationSpinner.id = 'evaluationSpinner';
+            evaluationSpinner.className = 'flex justify-center items-center py-4';
+            evaluationSpinner.innerHTML = `<div class="loading-spinner"></div><p class="ml-4 text-gray-600">L'IA évalue vos réponses et génère le corrigé...</p>`;
+            quizEvaluationArea.insertBefore(evaluationSpinner, quizAIEvaluation);
+
+            try {
+                const docOriginalContent = currentDocumentForTest.content;
+                const quizQuestions = currentAITestBeingAnswered.structuredContent.questions;
+                const userAnswers = currentAITestBeingAnswered.userAnswers;
+
+                let questionAnswerSummary = "";
+                quizQuestions.forEach((q, index) => {
+                    questionAnswerSummary += `Question ${index + 1} (${q.type === 'qcm' ? 'QCM' : 'Écrit'}): ${q.text}\n`;
+                    if (q.type === 'qcm') {
+                        questionAnswerSummary += `Votre réponse: ${q.options.find(opt => opt.id === userAnswers[index])?.text || "Non répondu"}\n`;
+                        questionAnswerSummary += `Bonne réponse: ${q.options.find(opt => opt.id === q.correctAnswerId)?.text}\n\n`;
+                    } else if (q.type === 'written') {
+                        questionAnswerSummary += `Votre réponse: ${userAnswers[index] || "Non répondu"}\n`;
+                        questionAnswerSummary += `Réponse attendue: ${q.correctAnswerText || "Non spécifiée"}\n\n`;
+                    }
+                });
+
+                let prompt = `En tant qu'évaluateur expert et pédagogue, vous devez évaluer les réponses d'un apprenant à un quiz interactif.
+Le quiz a été généré à partir du contenu original suivant :
+---
+Contenu original du document :
+${docOriginalContent}
+---
+
+Voici les questions du quiz et les réponses de l'apprenant, ainsi que les bonnes réponses :
+---
+${questionAnswerSummary}
+---
+
+Veuillez effectuer les tâches suivantes:
+1.  **Calculer le score brut de l'apprenant** sur ${quizQuestions.length} questions (par exemple, 3/${quizQuestions.length}). Pour les questions écrites, évaluez la pertinence de la réponse par rapport à la réponse attendue et au contenu original.
+2.  **Attribuer une note générale de 1 à 5** à la compréhension globale de l'apprenant, en considérant la pertinence et l'exhaustivité de ses réponses par rapport au contenu original et aux questions posées.
+    * 1 = Compréhension très faible, erreurs majeures.
+    * 2 = Compréhension limitée, beaucoup de lacunes.
+    * 3 = Compréhension acceptable, quelques imprécisions.
+    * 4 = Bonne compréhension, détails mineurs à améliorer.
+    * 5 = Excellente compréhension, précis et complet.
+3.  **Fournir une évaluation détaillée et constructive** expliquant pourquoi cette note a été attribuée. Mettez en évidence les points forts et les axes d'amélioration.
+4.  **Générer un corrigé détaillé** question par question, expliquant la bonne réponse et pourquoi elle est correcte, en se référant au contenu original si pertinent. Pour les questions écrites, comparez la réponse de l'apprenant à la réponse attendue.
+
+Votre réponse doit être structurée comme follows en utilisant des sections claires et du Markdown pour une meilleure lisibilité:
+---
+**Score Final: [Score Brute]/${quizQuestions.length}**
+**Note de Compréhension (1-5): [Note]/5**
+
+**Évaluation de l'IA:**
+[Votre évaluation détaillée ici, en utilisant des listes à puces ou numérotées si pertinent]
+
+**Corrigé Détaillé:**
+[Corrigé question par question, en utilisant des listes à puces ou numérotées si pertinent]
+---`;
 
                 let chatHistory = [];
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
@@ -1048,73 +1844,109 @@ Le test doit être formaté de manière simple, avec des questions numérotées.
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    console.error('Erreur API lors de la génération du test:', response.status, response.statusText, errorData);
-                    testContent.textContent = `Erreur lors de la génération du test (Code: ${response.status}). Veuillez réessayer. Détails: ${errorData.error?.message || 'Inconnu'}`;
-                    showAlert(`Erreur lors de la génération du test: ${response.status}`, 'Erreur AI', 'error');
+                    console.error('Erreur API lors de l\'évaluation AI:', response.status, response.statusText, errorData);
+                    quizResultsSummary.textContent = `Erreur lors de l'évaluation AI (Code: ${response.status}). Détails: ${errorData.error?.message || 'Inconnu'}`;
+                    showAlert(`Erreur lors de l'évaluation du quiz: ${response.status}`, 'Erreur AI', 'error');
                 } else {
                     const result = await response.json();
                     if (result.candidates && result.candidates.length > 0 &&
                         result.candidates[0].content && result.candidates[0].content.parts &&
                         result.candidates[0].content.parts.length > 0) {
                         const aiResponseText = result.candidates[0].content.parts[0].text;
-                        testContent.textContent = aiResponseText;
-                        saveGeneratedTestBtn.classList.remove('hidden'); 
-                        showAlert('Test AI généré avec succès ! Vous pouvez maintenant le sauvegarder.', 'Succès AI', 'success');
+                        
+                        const scoreMatch = aiResponseText.match(/Score Final:\s*(\d+)\/(\d+)/); 
+                        const noteMatch = aiResponseText.match(/Note de Compréhension \(1-5\):\s*(\d)\/5/);
+                        const evaluationMatch = aiResponseText.match(/Évaluation de l'IA:\s*([\s\S]*?)(?=Corrigé Détaillé:|$)/);
+                        const correctionMatch = aiResponseText.match(/Corrigé Détaillé:\s*([\s\S]*)/);
+
+                        let scoreFinal = scoreMatch ? `${scoreMatch[1]}/${scoreMatch[2]}` : 'N/A';
+                        let noteComprehension = noteMatch ? parseInt(noteMatch[1]) : 'N/A';
+                        let evaluationContent = evaluationMatch ? evaluationMatch[1].trim() : 'Non disponible.';
+                        let correctionContent = correctionMatch ? correctionMatch[1].trim() : 'Non disponible.';
+
+                        quizResultsSummary.innerHTML = marked.parse(`**Score Final:** ${scoreFinal} | **Note de Compréhension:** ${noteComprehension}/5`);
+                        quizAIEvaluation.innerHTML = marked.parse(evaluationContent);
+                        quizCorrectionContent.innerHTML = marked.parse(correctionContent);
+
+                        currentAITestBeingAnswered.aiEvaluation = aiResponseText; 
+                        currentAITestBeingAnswered.aiScore = noteComprehension; 
+                        currentAITestBeingAnswered.status = 'completed'; 
+                        saveDocuments();
+
+                        quizAIEvaluation.classList.remove('hidden');
+                        quizCorrectionContent.classList.remove('hidden');
+                        reEvaluateUnderstandingBtn.classList.remove('hidden'); 
+                        showAlert('Vos réponses ont été évaluées par l\'IA !', 'Quiz Terminé', 'success');
                     } else {
-                        console.error('Structure de réponse inattendue de l\'API Gemini:', result);
-                        testContent.textContent = "Désolé, je n'ai pas pu générer de test pour le moment. La réponse de l'IA n'était pas au format attendu. Veuillez réessayer.";
+                        console.error('Structure de réponse inattendue de l\'API Gemini pour l\'évaluation:', result);
+                        quizResultsSummary.textContent = "Désolé, l'IA n'a pas pu évaluer vos réponses. La réponse de l'IA n'était pas au format attendu. Veuillez réessayer.";
                         showAlert('La réponse de l\'IA était inattendue.', 'Erreur AI', 'error');
                     }
                 }
             } catch (error) {
-                console.error('Erreur lors de l\'appel de l\'API Gemini:', error);
-                testContent.textContent = "Une erreur est survenue lors de la génération du test. Veuillez vérifier votre connexion internet ou réessayer plus tard.";
-                showAlert('Erreur de connexion lors de la génération du test.', 'Erreur Réseau', 'error');
+                console.error('Erreur lors de l\'appel de l\'API Gemini pour l\'évaluation:', error);
+                quizResultsSummary.textContent = "Une erreur est survenue lors de l'évaluation par l'IA. Veuillez vérifier votre connexion internet ou réessayer plus tard.";
+                showAlert('Erreur de connexion lors de l\'évaluation par l\'IA.', 'Erreur Réseau', 'error');
             } finally {
-                testLoading.classList.add('hidden');
-                testContent.classList.remove('hidden'); 
+                const spinnerToRemove = document.getElementById('evaluationSpinner');
+                if (spinnerToRemove) spinnerToRemove.remove();
+                quizAIEvaluation.classList.remove('hidden');
+                quizCorrectionContent.classList.remove('hidden');
+                
+                renderAITests(); 
             }
         });
 
-        // Gérer le clic sur le bouton "Sauvegarder le Test"
-        saveGeneratedTestBtn.addEventListener('click', () => {
-            if (currentDocumentForTest && testContent.textContent.trim() !== '' && !testContent.textContent.trim().startsWith('Erreur')) {
-                const docIndex = documents.findIndex(d => d.id === currentDocumentForTest.id);
-                if (docIndex !== -1) {
-                    const newAITest = {
-                        id: crypto.randomUUID(),
-                        generatedAt: new Date().toISOString(),
-                        content: testContent.textContent,
-                        config: {
-                            studyLevel: studyLevelInput.value.trim(),
-                            difficulty: difficultyInput.value.trim(), 
-                            additionalContext: additionalContextInput.value.trim(),
-                        },
-                        status: 'pending', 
-                        startTime: null,
-                        endTime: null,
-                        duration: null, 
-                        userAnswers: null, 
-                        aiEvaluation: null, 
-                        aiScore: null, 
-                        correction: null, 
-                    };
-                    if (!documents[docIndex].aiTests) {
-                        documents[docIndex].aiTests = [];
+
+        // Gérer le passage de la modale de quiz à la modale de révision
+        reEvaluateUnderstandingBtn.addEventListener('click', () => {
+            doTestModal.classList.add('hidden'); 
+
+            if (currentAITestBeingAnswered) {
+                const doc = documents.find(d => d.aiTests && d.aiTests.some(test => test.id === currentAITestBeingAnswered.id));
+                currentReviewingDocumentId = doc ? doc.id : null;
+
+                if (doc) {
+                    modalDocumentName.textContent = doc.name;
+                    // Render Markdown content (if any) or plain text
+                    const content = doc.content;
+                    modalDocumentContent.innerHTML = marked.parse(content);
+
+                    reviewModal.classList.remove('hidden');
+                    scoreButtons.forEach(btn => btn.classList.remove('selected'));
+                    submitReviewBtn.disabled = true;
+
+                    if (currentAITestBeingAnswered.aiScore !== undefined && typeof currentAITestBeingAnswered.aiScore === 'number' && currentAITestBeingAnswered.aiScore >= 1 && currentAITestBeingAnswered.aiScore <= 5) {
+                        const scoreBtn = document.querySelector(`.score-button[data-score="${currentAITestBeingAnswered.aiScore}"]`);
+                        if (scoreBtn) {
+                            scoreBtn.click(); 
+                        }
+                    } else {
+                        selectedScore = null;
+                        submitReviewBtn.disabled = true; 
                     }
-                    documents[docIndex].aiTests.push(newAITest);
-                    saveDocuments(); 
-                    renderAITests(); 
-                    showAlert('Le test AI a été sauvegardé avec succès dans la section "Mes Tests AI".', 'Test sauvegardé', 'success');
-                    testDisplayModal.classList.add('hidden');
-                    currentDocumentForTest = null; 
                 }
-            } else {
-                showAlert("Impossible de sauvegarder un test vide ou erroné.", "Erreur de sauvegarde", 'error');
             }
         });
 
-        // Gestionnaire pour le bouton "Supprimer"
+        // Annuler/Fermer la modale de test AI / Quiz
+        closeQuizResultsBtn.addEventListener('click', () => {
+            doTestModal.classList.add('hidden');
+            clearInterval(timerInterval);
+            currentAITestBeingAnswered = null; 
+            currentDocumentForTest = null; 
+            quizGenerationLoading.classList.add('hidden');
+            quizDisplayArea.classList.add('hidden');
+            quizEvaluationArea.classList.add('hidden');
+            startQuizTimerBtn.classList.remove('hidden'); 
+            nextQuestionBtn.classList.add('hidden');
+            prevQuestionBtn.classList.add('hidden');
+            submitQuizBtn.classList.add('hidden');
+            saveAndQuitQuizBtn.classList.add('hidden'); 
+            renderAITests(); 
+        });
+
+        // Gérer le clic sur le bouton "Supprimer"
         async function handleDeleteButtonClick(event) {
             const docId = event.target.dataset.id;
             const docToDelete = documents.find(d => d.id === docId);
@@ -1131,7 +1963,7 @@ Le test doit être formaté de manière simple, avec des questions numérotées.
             }
         }
 
-        // Gestionnaire pour le bouton "Supprimer" d'un test AI
+        // Gérer le clic sur le bouton "Supprimer" d'un test AI
         async function handleDeleteAITestButtonClick(event) {
             const docId = event.target.dataset.docId;
             const testId = event.target.dataset.testId;
@@ -1175,449 +2007,13 @@ Le test doit être formaté de manière simple, avec des questions numérotées.
             }
         });
 
-        // Gérer l'annulation de la révision
-        cancelReviewBtn.addEventListener('click', () => {
-            reviewModal.classList.add('hidden');
-            currentReviewingDocumentId = null;
-            selectedScore = null;
-        });
 
-        // Gérer l'annulation de la modale de configuration du test AI
-        cancelTestConfigBtn.addEventListener('click', () => {
-            testConfigModal.classList.add('hidden');
-            currentDocumentForTest = null;
-        });
-
-        // Gérer l'annulation de la modale d'affichage du test AI
-        cancelTestDisplayBtn.addEventListener('click', () => {
-            testDisplayModal.classList.add('hidden');
-            currentDocumentForTest = null;
-            testContent.textContent = '';
-            testLoading.classList.add('hidden');
-            saveGeneratedTestBtn.classList.add('hidden');
-        });
-
-        // Nouvelle logique pour la modale "Répondre au Test AI"
-        function handleDoAITestButtonClick(event) {
-            const docId = event.target.dataset.docId;
-            const testId = event.target.dataset.testId;
-
-            const doc = documents.find(d => d.id === docId);
-            if (doc && doc.aiTests) {
-                const aiTest = doc.aiTests.find(test => test.id === testId);
-                if (aiTest) {
-                    currentAITestBeingAnswered = aiTest;
-                    currentDocumentForTest = doc; 
-
-                    doTestDocumentName.textContent = doc.name;
-                    doTestContent.textContent = aiTest.content; 
-
-                    // Réinitialiser les éléments de la modale de réponse
-                    userAnswersInput.value = aiTest.userAnswers || ''; 
-                    aiEvaluationSection.classList.add('hidden');
-                    aiEvaluationResult.textContent = '';
-                    submitAnswersBtn.classList.remove('hidden'); 
-                    evaluateMyUnderstandingBtn.classList.add('hidden'); 
-                    viewCorrectionBtn.classList.add('hidden'); 
-                    userAnswersInput.readOnly = false; 
-
-                    doTestModal.classList.remove('hidden');
-
-                    // Réinitialiser le minuteur et les boutons de contrôle du test
-                    clearInterval(timerInterval);
-                    secondsElapsed = 0;
-                    testTimer.textContent = formatTime(secondsElapsed);
-                    startTestBtn.classList.remove('hidden');
-                    finishTestBtn.classList.add('hidden');
-
-                    // Si le test était déjà en cours, restaurer le temps
-                    if (aiTest.status === 'in_progress' && aiTest.startTime) {
-                        const elapsedMs = new Date().getTime() - new Date(aiTest.startTime).getTime();
-                        secondsElapsed = Math.floor(elapsedMs / 1000);
-                        testTimer.textContent = formatTime(secondsElapsed);
-                        startTestBtn.classList.add('hidden');
-                        finishTestBtn.classList.remove('hidden');
-                        timerInterval = setInterval(updateTimer, 1000);
-                        showAlert('Test en cours. Le minuteur a repris là où vous l\'avez laissé.', 'Reprise du Test', 'info');
-                    } else if (aiTest.status === 'completed') {
-                        // Si le test est terminé, afficher la durée finale et l'évaluation IA si elle existe
-                        testTimer.textContent = formatTime(aiTest.duration || 0);
-                        startTestBtn.classList.add('hidden');
-                        finishTestBtn.classList.add('hidden'); 
-                        submitAnswersBtn.classList.add('hidden'); 
-                        userAnswersInput.readOnly = true; 
-
-                        if (aiTest.aiEvaluation) {
-                            aiEvaluationSection.classList.remove('hidden');
-                            aiEvaluationResult.textContent = aiTest.aiEvaluation;
-                            evaluateMyUnderstandingBtn.classList.remove('hidden'); 
-                        }
-                        if (aiTest.correction) { 
-                            viewCorrectionBtn.classList.remove('hidden');
-                        }
-                        showAlert('Ce test est déjà terminé. Durée : ' + formatTime(aiTest.duration || 0), 'Test Terminé', 'info');
-                    }
-                }
-            }
-        }
-
-        // Démarrer le minuteur
-        startTestBtn.addEventListener('click', () => {
-            if (currentAITestBeingAnswered) {
-                startTestBtn.classList.add('hidden');
-                finishTestBtn.classList.remove('hidden');
-                if (currentAITestBeingAnswered.status !== 'in_progress') {
-                    currentAITestBeingAnswered.status = 'in_progress';
-                    currentAITestBeingAnswered.startTime = new Date().toISOString();
-                    secondsElapsed = 0; 
-                }
-                timerInterval = setInterval(updateTimer, 1000);
-                saveDocuments(); 
-            }
-        });
-
-        // Mettre à jour le minuteur
-        function updateTimer() {
-            secondsElapsed++;
-            testTimer.textContent = formatTime(secondsElapsed);
-        }
-
-        // Terminer le minuteur et le test (cette action n'est plus la finalité du test, c'est juste la fin du temps)
-        finishTestBtn.addEventListener('click', async () => {
-            const confirmed = await showConfirm('Voulez-vous arrêter le minuteur ? Vous pourrez toujours soumettre vos réponses à l\'IA si ce n\'est pas déjà fait.', 'Terminer le Temps');
-            if (confirmed) {
-                clearInterval(timerInterval);
-                finishTestBtn.classList.add('hidden');
-                startTestBtn.classList.remove('hidden'); 
-                if (currentAITestBeingAnswered) {
-                    currentAITestBeingAnswered.endTime = new Date().toISOString();
-                    currentAITestBeingAnswered.duration = secondsElapsed; 
-                    saveDocuments();
-                    showAlert(`Minuteur arrêté. Durée enregistrée : ${formatTime(secondsElapsed)} !`, 'Minuteur Arrêté', 'info');
-                }
-            }
-        });
-
-        // Soumettre les réponses de l'utilisateur à l'IA pour évaluation
-        submitAnswersBtn.addEventListener('click', async () => {
-            const userAnswers = userAnswersInput.value.trim();
-            if (!userAnswers) {
-                showAlert("Veuillez taper vos réponses avant de soumettre à l'IA.", "Champs vide", 'warning');
-                return;
-            }
-
-            if (!currentAITestBeingAnswered || !currentDocumentForTest) {
-                showAlert("Erreur: Aucun test ou document actif pour l'évaluation AI.", "Erreur", 'error');
-                return;
-            }
-
-            aiEvaluationSection.classList.remove('hidden');
-            aiEvaluationLoading.classList.remove('hidden');
-            aiEvaluationResult.textContent = '';
-            submitAnswersBtn.disabled = true; 
-            userAnswersInput.readOnly = true; 
-
-            try {
-                const docOriginalContent = documents.find(d => d.id === currentDocumentForTest.id)?.content || "Contenu non trouvé.";
-
-                let prompt = `En tant qu'évaluateur expert et pédagogue, vous devez évaluer les réponses d'un apprenant à un test basé sur un document.
-Le test a été généré à partir du contenu original suivant :
----
-Contenu original du document :
-${docOriginalContent}
----
-
-Les questions du test AI étaient :
----
-Test AI généré :
-${currentAITestBeingAnswered.content}
----
-
-Voici les réponses de l'apprenant :
----
-Réponses de l'apprenant :
-${userAnswers}
----
-
-Veuillez attribuer une note de 1 à 5 à la compréhension de l'apprenant, en considérant la pertinence et l'exhaustivité de ses réponses par rapport au contenu original et aux questions posées.
-1 = Complètement à côté ou réponses vides.
-2 = Compréhension très limitée, beaucoup d'erreurs ou d'omissions.
-3 = Compréhension acceptable, quelques lacunes.
-4 = Bonne compréhension, quelques détails manquants ou imprécisions mineures.
-5 = Excellente compréhension, réponses précises et complètes.
-
-Après la note, fournissez une justification brève mais constructive, expliquant pourquoi cette note a été attribuée et ce qui pourrait être amélioré.
-Votre réponse doit commencer par "Note: X/5 - Justification: [Votre justification]".`;
-
-
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                const payload = { contents: chatHistory };
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Erreur API lors de l\'évaluation AI:', response.status, response.statusText, errorData);
-                    aiEvaluationResult.textContent = `Erreur lors de l'évaluation AI (Code: ${response.status}). Veuillez réessayer. Détails: ${errorData.error?.message || 'Inconnu'}`;
-                    showAlert(`Erreur lors de l'évaluation du test: ${response.status}`, 'Erreur AI', 'error');
-                } else {
-                    const result = await response.json();
-                    if (result.candidates && result.candidates.length > 0 &&
-                        result.candidates[0].content && result.candidates[0].content.parts &&
-                        result.candidates[0].content.parts.length > 0) {
-                        const aiResponseText = result.candidates[0].content.parts[0].text;
-                        aiEvaluationResult.textContent = aiResponseText;
-
-                        // Extraire la note si possible
-                        const match = aiResponseText.match(/Note:\s*(\d)\/5/);
-                        if (match && match[1]) {
-                            const aiScore = parseInt(match[1]);
-                            currentAITestBeingAnswered.userAnswers = userAnswers;
-                            currentAITestBeingAnswered.aiEvaluation = aiResponseText;
-                            currentAITestBeingAnswered.aiScore = aiScore; 
-                            currentAITestBeingAnswered.status = 'completed'; 
-                            saveDocuments(); 
-                            evaluateMyUnderstandingBtn.classList.remove('hidden'); 
-                            viewCorrectionBtn.classList.remove('hidden'); 
-                            showAlert('Vos réponses ont été évaluées par l\'IA ! Vous pouvez maintenant évaluer votre compréhension générale.', 'Évaluation AI Reçue', 'success');
-                        } else {
-                            showAlert('L\'IA a fourni une réponse, mais la note n\'a pas pu être extraite automatiquement. Veuillez lire le feedback.', 'Évaluation AI Partielle', 'warning');
-                        }
-                    } else {
-                        console.error('Structure de réponse inattendue de l\'API Gemini pour l\'évaluation:', result);
-                        aiEvaluationResult.textContent = "Désolé, l'IA n'a pas pu évaluer vos réponses. La réponse de l'IA n'était pas au format attendu. Veuillez réessayer.";
-                        showAlert('La réponse de l\'IA était inattendue.', 'Erreur AI', 'error');
-                    }
-                }
-            } catch (error) {
-                console.error('Erreur lors de l\'appel de l\'API Gemini pour l\'évaluation:', error);
-                aiEvaluationResult.textContent = "Une erreur est survenue lors de l'évaluation par l'IA. Veuillez vérifier votre connexion internet ou réessayer plus tard.";
-                showAlert('Erreur de connexion lors de l\'évaluation par l\'IA.', 'Erreur Réseau', 'error');
-            } finally {
-                aiEvaluationLoading.classList.add('hidden');
-                submitAnswersBtn.disabled = false; 
-                renderAITests(); 
-            }
-        });
-
-        // Gérer le passage de la modale de réponse au test AI à la modale de révision
-        evaluateMyUnderstandingBtn.addEventListener('click', () => {
-            doTestModal.classList.add('hidden'); 
-
-            if (currentAITestBeingAnswered) {
-                const doc = documents.find(d => d.aiTests && d.aiTests.some(test => test.id === currentAITestBeingAnswered.id));
-                currentReviewingDocumentId = doc ? doc.id : null;
-
-                if (doc) {
-                    modalDocumentName.textContent = doc.name;
-                    modalDocumentContent.textContent = doc.content;
-                    reviewModal.classList.remove('hidden');
-                    scoreButtons.forEach(btn => btn.classList.remove('selected'));
-                    submitReviewBtn.disabled = true;
-
-                    // Tenter de pré-sélectionner le score de l'IA
-                    if (currentAITestBeingAnswered.aiScore !== undefined && currentAITestBeingAnswered.aiScore >= 1 && currentAITestBeingAnswered.aiScore <= 5) {
-                        const scoreBtn = document.querySelector(`.score-button[data-score="${currentAITestBeingAnswered.aiScore}"]`);
-                        if (scoreBtn) {
-                            scoreBtn.click(); 
-                        }
-                    } else {
-                        selectedScore = null;
-                        submitReviewBtn.disabled = true; 
-                    }
-                }
-            }
-        });
-
-        // Annuler/Fermer la modale de test AI
-        cancelDoTestBtn.addEventListener('click', async () => {
-            if (currentAITestBeingAnswered && currentAITestBeingAnswered.status === 'in_progress') {
-                const confirmed = await showConfirm('Le test est en cours. Si vous fermez, le minuteur s\'arrêtera mais votre progression sera sauvegardée. Voulez-vous continuer ?', 'Quitter le Test');
-                if (!confirmed) {
-                    return; 
-                }
-            }
-            clearInterval(timerInterval);
-            doTestModal.classList.add('hidden');
-            currentAITestBeingAnswered = null; 
-            currentDocumentForTest = null; 
-            // Nettoyer les champs et états de la modale pour la prochaine ouverture
-            userAnswersInput.value = '';
-            userAnswersInput.readOnly = false;
-            aiEvaluationSection.classList.add('hidden');
-            aiEvaluationResult.textContent = '';
-            aiEvaluationLoading.classList.add('hidden'); 
-            submitAnswersBtn.classList.remove('hidden');
-            evaluateMyUnderstandingBtn.classList.add('hidden');
-            viewCorrectionBtn.classList.add('hidden'); 
-            renderAITests(); 
-        });
-
-        // Logique de recherche et de filtre
-        searchDocumentInput.addEventListener('input', renderDocuments);
-        filterStatusSelect.addEventListener('change', renderDocuments);
-
-        // Exportation des données
-        exportDataBtn.addEventListener('click', () => {
-            const dataToExport = JSON.stringify(documents, null, 2);
-            const blob = new Blob([dataToExport], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'rvsion_data.json';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showAlert('Vos données ont été exportées avec succès !', 'Exportation réussie', 'success');
-        });
-
-        // Importation des données
-        importDataBtn.addEventListener('click', () => {
-            importFileInput.click(); 
-        });
-
-        importFileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    try {
-                        const importedData = JSON.parse(e.target.result);
-                        const confirmed = await showConfirm('Voulez-vous remplacer vos données actuelles par les données importées ? Cette action est irréversible.', 'Confirmation d\'importation');
-                        if (confirmed) {
-                            // Validation simple des données importées (vérifier qu'elles ressemblent à des documents)
-                            if (Array.isArray(importedData) && importedData.every(doc => doc.id && doc.name && doc.content)) {
-                                documents = importedData.map(doc => {
-                                    // S'assurer que les dates sont des objets Date après importation
-                                    doc.lastReviewed = new Date(doc.lastReviewed);
-                                    doc.nextReview = new Date(doc.nextReview);
-                                    doc.category = doc.category || 'Non classé'; 
-                                    doc.subcategory = doc.subcategory || 'Non classé';
-
-                                    if (doc.aiTests) {
-                                        doc.aiTests.forEach(test => {
-                                            test.generatedAt = new Date(test.generatedAt);
-                                            if (test.startTime) test.startTime = new Date(test.startTime);
-                                            if (test.endTime) test.endTime = new Date(test.endTime);
-                                            test.config.difficulty = test.config.difficulty || 'Moyen';
-                                            delete test.config.generalTheme;
-                                            delete test.config.specificTheme;
-                                        });
-                                    }
-                                    return doc;
-                                });
-                                saveDocuments();
-                                loadDocuments(); // Recharger pour assurer la cohérence des catégories après import
-                                showAlert('Données importées et chargées avec succès !', 'Importation réussie', 'success');
-                            } else {
-                                showAlert('Le fichier importé n\'est pas au format attendu.', 'Erreur d\'importation', 'error');
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Erreur lors de l\'importation du fichier:', error);
-                        showAlert('Erreur lors de la lecture ou du traitement du fichier JSON. Assurez-vous que c\'est un fichier JSON valide.', 'Erreur d\'importation', 'error');
-                    }
-                };
-                reader.readAsText(file);
-            }
-        });
-
-        // Nouveau : Gérer le clic sur le bouton "Voir le corrigé"
-        viewCorrectionBtn.addEventListener('click', async () => {
-            if (!currentAITestBeingAnswered || !currentDocumentForTest) {
-                showAlert("Erreur: Aucun test ou document actif pour générer le corrigé.", "Erreur", 'error');
-                return;
-            }
-
-            correctionModal.classList.remove('hidden');
-            correctionDocumentName.textContent = currentDocumentForTest.name;
-            correctionContent.textContent = ''; 
-            correctionLoading.classList.remove('hidden');
-
-            // Si le corrigé n'a pas encore été généré pour ce test, le générer
-            if (!currentAITestBeingAnswered.correction) {
-                try {
-                    const docOriginalContent = documents.find(d => d.id === currentDocumentForTest.id)?.content || "Contenu non trouvé.";
-                    const userAnswers = currentAITestBeingAnswered.userAnswers || 'Aucune réponse fournie.';
-
-                    let prompt = `En tant qu'expert en pédagogie, générez un corrigé détaillé pour le test suivant, basé sur le document original, les questions posées et les réponses de l'apprenant.
-Le corrigé doit expliquer les points clés pour chaque question, en fournissant les réponses correctes et des informations complémentaires si nécessaire.
-Il doit être clair, concis et aider l'apprenant à comprendre où se situent ses lacunes.
-
----
-Contenu original du document :
-${docOriginalContent}
----
-
-Questions du test :
-${currentAITestBeingAnswered.content}
----
-
-Réponses de l'apprenant :
-${userAnswers}
----
-
-Veuillez structurer le corrigé question par question.`;
-
-                    let chatHistory = [];
-                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-                    const payload = { contents: chatHistory };
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        console.error('Erreur API lors de la génération du corrigé:', response.status, response.statusText, errorData);
-                        correctionContent.textContent = `Erreur lors de la génération du corrigé (Code: ${response.status}). Veuillez réessayer. Détails: ${errorData.error?.message || 'Inconnu'}`;
-                        showAlert(`Erreur lors de la génération du corrigé: ${response.status}`, 'Erreur AI', 'error');
-                    } else {
-                        const result = await response.json();
-                        if (result.candidates && result.candidates.length > 0 &&
-                            result.candidates[0].content && result.candidates[0].content.parts &&
-                            result.candidates[0].content.parts.length > 0) {
-                            const aiResponseText = result.candidates[0].content.parts[0].text;
-                            currentAITestBeingAnswered.correction = aiResponseText; 
-                            saveDocuments(); 
-                            correctionContent.textContent = aiResponseText;
-                            showAlert('Corrigé généré avec succès !', 'Corrigé disponible', 'success');
-                        } else {
-                            console.error('Structure de réponse inattendue de l\'API Gemini pour le corrigé:', result);
-                            correctionContent.textContent = "Désolé, je n'ai pas pu générer le corrigé pour le moment. La réponse de l'IA n'était pas au format attendu. Veuillez réessayer.";
-                            showAlert('La réponse de l\'IA était inattendue.', 'Erreur AI', 'error');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Erreur lors de l\'appel de l\'API Gemini pour le corrigé:', error);
-                    correctionContent.textContent = "Une erreur est survenue lors de la génération du corrigé. Veuillez vérifier votre connexion internet ou réessayer plus tard.";
-                    showAlert('Erreur de connexion lors de la génération du corrigé.', 'Erreur Réseau', 'error');
-                } finally {
-                    correctionLoading.classList.add('hidden');
-                }
-            } else {
-                // Si le corrigé existe déjà, l'afficher directement
-                correctionContent.textContent = currentAITestBeingAnswered.correction;
-                correctionLoading.classList.add('hidden');
-            }
-        });
-
-        // Gérer la fermeture de la modale de corrigé
+        // Gérer le clic sur le bouton "Voir le corrigé" (utilisé si le test est de type texte simple)
         closeCorrectionBtn.addEventListener('click', () => {
             correctionModal.classList.add('hidden');
         });
 
-        // NOUVEAU: Gestion des catégories et sous-catégories
+        // Gestion des catégories et sous-catégories
         manageCategoriesBtn.addEventListener('click', () => {
             categoryManagementModal.classList.remove('hidden');
             renderCategoriesList();
@@ -1625,8 +2021,8 @@ Veuillez structurer le corrigé question par question.`;
 
         closeCategoryManagementBtn.addEventListener('click', () => {
             categoryManagementModal.classList.add('hidden');
-            populateCategorySelectors(); // Rafraîchir les sélecteurs de document au cas où des catégories aient été ajoutées/supprimées
-            populateFilterCategorySelectors(); // Rafraîchir les sélecteurs de filtre
+            populateCategorySelectors();
+            populateFilterCategorySelectors();
         });
 
         addCategoryBtn.addEventListener('click', () => {
@@ -1683,15 +2079,15 @@ Veuillez structurer le corrigé question par question.`;
 
         function attachCategoryListEventListeners() {
             document.querySelectorAll('.add-subcategory-btn').forEach(button => {
-                button.removeEventListener('click', handleAddSubcategoryClick); // Éviter les doublons
+                button.removeEventListener('click', handleAddSubcategoryClick); 
                 button.addEventListener('click', handleAddSubcategoryClick);
             });
             document.querySelectorAll('.delete-category-btn').forEach(button => {
-                button.removeEventListener('click', handleDeleteCategoryClick); // Éviter les doublons
+                button.removeEventListener('click', handleDeleteCategoryClick); 
                 button.addEventListener('click', handleDeleteCategoryClick);
             });
             document.querySelectorAll('.delete-subcategory-btn').forEach(button => {
-                button.removeEventListener('click', handleDeleteSubcategoryClick); // Éviter les doublons
+                button.removeEventListener('click', handleDeleteSubcategoryClick); 
                 button.addEventListener('click', handleDeleteSubcategoryClick);
             });
         }
@@ -1710,7 +2106,7 @@ Veuillez structurer le corrigé question par question.`;
                     saveDocuments();
                     renderCategoriesList();
                     showAlert('Sous-catégorie ajoutée avec succès !', 'Succès', 'success');
-                } else if (subcategoryName !== null) { // Si l'utilisateur a annulé, prompt() retourne null
+                } else if (subcategoryName !== null) { 
                     showAlert('Veuillez entrer un nom pour la sous-catégorie.', 'Champ vide', 'error');
                 }
             }
@@ -1723,16 +2119,15 @@ Veuillez structurer le corrigé question par question.`;
                 const confirmed = await showConfirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${categoryToDelete.name}" et toutes ses sous-catégories ? Les documents associés seront "Non classés".`, 'Supprimer la catégorie');
                 if (confirmed) {
                     categories = categories.filter(cat => cat.id !== categoryId);
-                    // Mettre à jour les documents pour qu'ils soient "Non classés" si leur catégorie est supprimée
                     documents.forEach(doc => {
                         if (doc.category === categoryToDelete.name) {
                             doc.category = 'Non classé';
-                            doc.subcategory = 'Non classé'; // Supprimer aussi la sous-catégorie
+                            doc.subcategory = 'Non classé'; 
                         }
                     });
                     saveDocuments();
                     renderCategoriesList();
-                    renderDocuments(); // Rafraîchir les documents affichés
+                    renderDocuments(); 
                     showAlert('Catégorie supprimée.', 'Succès', 'success');
                 }
             }
@@ -1749,7 +2144,6 @@ Veuillez structurer le corrigé question par question.`;
                     const confirmed = await showConfirm(`Êtes-vous sûr de vouloir supprimer la sous-catégorie "${subcategoryToDelete.name}" ? Les documents associés seront "Non classés".`, 'Supprimer la sous-catégorie');
                     if (confirmed) {
                         category.subcategories = category.subcategories.filter(sub => sub.id !== subcategoryId);
-                        // Mettre à jour les documents pour qu'ils soient "Non classés" si leur sous-catégorie est supprimée
                         documents.forEach(doc => {
                             if (doc.subcategory === subcategoryToDelete.name && doc.category === category.name) {
                                 doc.subcategory = 'Non classé';
@@ -1757,15 +2151,441 @@ Veuillez structurer le corrigé question par question.`;
                         });
                         saveDocuments();
                         renderCategoriesList();
-                        renderDocuments(); // Rafraîchir les documents affichés
+                        renderDocuments(); 
                         showAlert('Sous-catégorie supprimée.', 'Succès', 'success');
                     }
                 }
             }
         }
 
-        // Charger les documents au chargement de la page
-        window.onload = loadDocuments;
+        // Fonction pour afficher les messages dans le chat AI
+        function displayChatMessage(role, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `p-2 rounded-lg max-w-[80%] my-1 text-sm `; 
+            
+            if (role === 'user') {
+                messageDiv.classList.add('chat-message-user'); 
+            } else {
+                messageDiv.classList.add('chat-message-ai'); 
+            }
+            messageDiv.textContent = text;
+            aiChatDisplay.appendChild(messageDiv);
+            aiChatDisplay.scrollTop = aiChatDisplay.scrollHeight; 
+        }
+
+        // Événement d'envoi de message au chat AI
+        sendAIChatBtn.addEventListener('click', async () => {
+            const userMessage = aiChatInput.value.trim();
+            if (!userMessage) {
+                showAlert("Veuillez taper votre question.", "Question vide", 'warning');
+                return;
+            }
+
+            const doc = documents.find(d => d.id === currentReviewingDocumentId);
+            if (!doc) {
+                showAlert("Erreur: Document non trouvé pour le chat AI.", "Erreur Chat", 'error');
+                return;
+            }
+
+            displayChatMessage('user', userMessage);
+            doc.aiChatHistory.push({ role: 'user', text: userMessage });
+            saveDocuments();
+            aiChatInput.value = ''; 
+            aiChatLoading.classList.remove('hidden'); 
+            sendAIChatBtn.disabled = true; 
+
+            try {
+                const documentContent = doc.content;
+                let prompt = `En tant qu'assistant pédagogique, répondez à la question de l'apprenant. Utilisez le contenu du cours suivant pour des informations spécifiques, et complétez avec vos connaissances générales si nécessaire. Si la réponse n'est pas claire dans le cours, utilisez vos connaissances pour fournir une réponse complète et utile.
+
+---
+Contenu du cours :
+${documentContent}
+---
+
+Question de l'apprenant : "${userMessage}"`;
+                
+                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] }; 
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Erreur API lors du chat AI:', response.status, response.statusText, errorData);
+                    displayChatMessage('ai', `Désolé, une erreur est survenue lors de la communication avec l'IA. (Code: ${response.status}). Veuillez réessayer. Détails: ${errorData.error?.message || 'Inconnu'}`);
+                } else {
+                    const result = await response.json();
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const aiResponseText = result.candidates[0].content.parts[0].text;
+                        displayChatMessage('ai', aiResponseText);
+                        doc.aiChatHistory.push({ role: 'ai', text: aiResponseText });
+                        saveDocuments();
+                    } else {
+                        console.error('Structure de réponse inattendue de l\'API Gemini pour le chat:', result);
+                        displayChatMessage('ai', "Désolé, l'IA n'a pas pu répondre. La structure de la réponse était inattendue.");
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'appel de l\'API Gemini pour le chat:', error);
+                displayChatMessage('ai', "Une erreur est survenue lors du chat avec l'IA. Vérifiez votre connexion internet.");
+            } finally {
+                aiChatLoading.classList.add('hidden'); 
+                sendAIChatBtn.disabled = false; 
+            }
+        });
+
+        // Add event listener for Enter key in chat input
+        aiChatInput.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); 
+                sendAIChatBtn.click(); 
+            }
+        });
+
+        // Fonction d'exportation des données
+        exportDataBtn.addEventListener('click', () => {
+            try {
+                const dataToExport = {
+                    documents: documents,
+                    categories: categories
+                };
+                const dataStr = JSON.stringify(dataToExport, null, 2); 
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `rvsion_data_export_${new Date().toISOString().slice(0,10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showAlert('Données exportées avec succès !', 'Exportation Réussie', 'success');
+            } catch (e) {
+                console.error('Erreur lors de l\'exportation des données:', e);
+                showAlert('Erreur lors de l\'exportation des données.', 'Erreur d\'Exportation', 'error');
+            }
+        });
+
+        // Fonction d'importation des données
+        importDataBtn.addEventListener('click', () => {
+            importFileInput.click(); 
+        });
+
+        importFileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    const confirmed = await showConfirm(
+                        'L\'importation des données va remplacer toutes vos données actuelles. Voulez-vous continuer ?',
+                        'Confirmer l\'Importation'
+                    );
+
+                    if (confirmed) {
+                        if (importedData.documents && Array.isArray(importedData.documents) &&
+                            importedData.categories && Array.isArray(importedData.categories)) {
+                            
+                            const isValidDocuments = importedData.documents.every(doc => 
+                                doc.id && doc.name && doc.content && doc.lastReviewed && doc.nextReview
+                            );
+                            const isValidCategories = importedData.categories.every(cat => 
+                                cat.id && cat.name && Array.isArray(cat.subcategories)
+                            );
+
+                            if (isValidDocuments && isValidCategories) {
+                                documents = importedData.documents.map(doc => ({
+                                    ...doc,
+                                    lastReviewed: new Date(doc.lastReviewed),
+                                    nextReview: new Date(doc.nextReview),
+                                    aiTests: doc.aiTests ? doc.aiTests.map(test => ({
+                                        ...test,
+                                        generatedAt: new Date(test.generatedAt),
+                                        startTime: test.startTime ? new Date(test.startTime) : null,
+                                        endTime: test.endTime ? new Date(test.endTime) : null,
+                                        config: test.config || { difficulty: 'Moyen', questionType: 'qcm', numQuestions: 5 }, 
+                                        currentQuestionIndex: test.currentQuestionIndex !== undefined ? test.currentQuestionIndex : 0 
+                                    })) : [],
+                                    aiChatHistory: doc.aiChatHistory || [],
+                                    flashcards: doc.flashcards || []
+                                }));
+                                categories = importedData.categories;
+                                saveDocuments();
+                                renderDocuments();
+                                renderAITests();
+                                showAlert('Données importées avec succès !', 'Importation Réussie', 'success');
+                            } else {
+                                showAlert('Le fichier JSON n\'a pas le format attendu pour les documents ou les catégories. Importation annulée.', 'Erreur de Format', 'error');
+                            }
+                        } else {
+                            showAlert('Le fichier JSON ne contient pas les clés "documents" et "categories" ou elles sont mal formattées. Importation annulée.', 'Erreur de Format', 'error');
+                        }
+                    } else {
+                        showAlert('Importation annulée par l\'utilisateur.', 'Annulé', 'info');
+                    }
+
+                } catch (e) {
+                    console.error('Erreur lors de l\'importation ou du parsing du fichier JSON:', e);
+                    showAlert('Erreur lors de l\'importation du fichier. Assurez-vous que c\'est un fichier JSON valide.', 'Erreur d\'Importation', 'error');
+                }
+            };
+            reader.readAsText(file);
+        });
+
+
+        // --- Global Event Listener Initialization ---
+        function initGlobalEventListeners() {
+            closeAlertBtn.addEventListener('click', () => {
+                customAlertModal.classList.add('hidden');
+            });
+            cancelReviewBtn.addEventListener('click', () => {
+                reviewModal.classList.add('hidden');
+                currentReviewingDocumentId = null;
+                selectedScore = null;
+            });
+            cancelTestConfigBtn.addEventListener('click', () => {
+                testConfigModal.classList.add('hidden');
+                currentDocumentForTest = null;
+            });
+            prepareInteractiveTestBtn.addEventListener('click', async () => { /* Logic defined above */ });
+            nextQuestionBtn.addEventListener('click', () => { /* Logic defined above */ });
+            prevQuestionBtn.addEventListener('click', () => { /* Logic defined above */ });
+            startQuizTimerBtn.addEventListener('click', () => { /* Logic defined above */ });
+            submitQuizBtn.addEventListener('click', async () => { /* Logic defined above */ });
+            reEvaluateUnderstandingBtn.addEventListener('click', () => { /* Logic defined above */ });
+            closeQuizResultsBtn.addEventListener('click', () => { /* Logic defined above */ });
+            saveAndQuitQuizBtn.addEventListener('click', async () => { /* Logic defined above */ }); 
+            searchDocumentInput.addEventListener('input', renderDocuments);
+            filterStatusSelect.addEventListener('change', renderDocuments);
+            documentCategorySelect.addEventListener('change', () => {
+                const selectedCategoryId = documentCategorySelect.value;
+                documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>';
+                documentSubcategorySelect.disabled = true;
+
+                if (selectedCategoryId) {
+                    const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+                    if (selectedCategory && selectedCategory.subcategories.length > 0) {
+                        selectedCategory.subcategories.forEach(sub => {
+                            const option = document.createElement('option');
+                            option.value = sub.id;
+                            option.textContent = sub.name;
+                            documentSubcategorySelect.appendChild(option);
+                        });
+                        documentSubcategorySelect.disabled = false;
+                    }
+                }
+            });
+            filterCategorySelect.addEventListener('change', () => {
+                const selectedCategoryId = filterCategorySelect.value;
+                filterSubcategorySelect.innerHTML = '<option value="all">Toutes sous-catégories</option>';
+                filterSubcategorySelect.disabled = true;
+
+                if (selectedCategoryId && selectedCategoryId !== 'all') {
+                    const selectedCategory = categories.find(cat => cat.id === selectedCategoryId);
+                    if (selectedCategory && selectedCategory.subcategories.length > 0) {
+                        selectedCategory.subcategories.forEach(sub => {
+                            const option = document.createElement('option');
+                            option.value = sub.id;
+                            option.textContent = sub.name;
+                            filterSubcategorySelect.appendChild(option);
+                        });
+                        filterSubcategorySelect.disabled = false;
+                    }
+                }
+                renderDocuments();
+            });
+            filterSubcategorySelect.addEventListener('change', renderDocuments);
+            exportDataBtn.addEventListener('click', () => { /* Logic defined above */ });
+            importDataBtn.addEventListener('click', () => { /* Logic defined above */ });
+            importFileInput.addEventListener('change', (event) => { /* Logic defined above */ });
+            closeCorrectionBtn.addEventListener('click', () => { /* Logic defined above */ });
+            manageCategoriesBtn.addEventListener('click', () => { /* Logic defined above */ });
+            closeCategoryManagementBtn.addEventListener('click', () => { /* Logic defined above */ });
+            addCategoryBtn.addEventListener('click', () => { /* Logic defined above */ });
+            scoreButtons.forEach(button => { /* Logic defined above */ });
+
+            // Flashcard specific event listeners
+            flipFlashcardBtn.addEventListener('click', () => {
+                flashcardCard.classList.toggle('flipped'); // Toggle the flipped class
+                isFlashcardFlipped = !isFlashcardFlipped;
+            });
+            prevFlashcardBtn.addEventListener('click', () => {
+                if (currentFlashcardIndex > 0) {
+                    currentFlashcardIndex--;
+                    displayFlashcard();
+                }
+            });
+            nextFlashcardBtn.addEventListener('click', () => {
+                if (currentFlashcardIndex < currentFlashcards.length - 1) {
+                    currentFlashcardIndex++;
+                    displayFlashcard();
+                }
+            });
+            closeFlashcardModalBtn.addEventListener('click', () => {
+                flashcardModal.classList.add('hidden');
+                currentFlashcards = [];
+                currentFlashcardIndex = 0;
+                isFlashcardFlipped = false;
+            });
+            // Removed synthesis specific event listener
+        }
+        // --- END Global Event Listener Initialization ---
+
+        // Handler for Flashcards button click
+        async function handleFlashcardsButtonClick(event) {
+            const docId = event.target.dataset.id;
+            const doc = documents.find(d => d.id === docId);
+            if (!doc) return;
+
+            flashcardModal.classList.remove('hidden');
+            flashcardLoading.classList.remove('hidden');
+            flipFlashcardBtn.disabled = true;
+            prevFlashcardBtn.disabled = true;
+            nextFlashcardBtn.disabled = true;
+            flashcardQuestionDisplay.innerHTML = ''; // Use innerHTML for Markdown
+            flashcardAnswerDisplay.innerHTML = ''; // Use innerHTML for Markdown
+            flashcardCard.classList.remove('flipped'); // Ensure not flipped initially
+            isFlashcardFlipped = false;
+
+            if (doc.flashcards && doc.flashcards.length > 0) {
+                currentFlashcards = doc.flashcards;
+                currentFlashcardIndex = 0;
+                flashcardLoading.classList.add('hidden');
+                displayFlashcard();
+            } else {
+                try {
+                    const prompt = `Génère 10 flashcards (question et réponse) en format JSON à partir du texte suivant.
+                    Le JSON doit avoir une propriété "flashcards" qui est un tableau d'objets. Chaque objet flashcard doit avoir les propriétés "question" (string) et "answer" (string).
+                    Utilise le formatage Markdown (texte en gras avec **, listes à puces avec -) pour le contenu des questions et réponses si cela améliore la clarté.
+                    Texte du document:
+                    ---
+                    ${doc.content}
+                    ---
+                    Fournis uniquement le JSON.`;
+
+                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                    const payload = { 
+                        contents: chatHistory,
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "OBJECT",
+                                properties: {
+                                    "flashcards": {
+                                        "type": "ARRAY",
+                                        "items": {
+                                            "type": "OBJECT",
+                                            "properties": {
+                                                "question": { "type": "STRING" },
+                                                "answer": { "type": "STRING" }
+                                            },
+                                            "required": ["question", "answer"]
+                                        }
+                                    }
+                                },
+                                "required": ["flashcards"]
+                            }
+                        }
+                    };
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(`Échec de l'IA: ${errorData.error?.message || response.statusText}`);
+                    }
+                    const result = await response.json();
+                    const flashcardData = JSON.parse(result.candidates[0].content.parts[0].text);
+
+                    if (flashcardData.flashcards && Array.isArray(flashcardData.flashcards) && flashcardData.flashcards.length > 0) {
+                        doc.flashcards = flashcardData.flashcards;
+                        saveDocuments();
+                        currentFlashcards = doc.flashcards;
+                        currentFlashcardIndex = 0;
+                        displayFlashcard();
+                        showAlert('Flashcards générées avec succès !', 'Succès AI', 'success');
+                    } else {
+                        showAlert('L\'IA n\'a pas pu générer les flashcards.', 'Erreur AI', 'error');
+                        flashcardModal.classList.add('hidden');
+                    }
+                } catch (error) {
+                    console.error('Erreur lors de la génération des flashcards:', error);
+                    showAlert('Erreur lors de la génération des flashcards: ' + error.message, 'Erreur AI', 'error');
+                    flashcardModal.classList.add('hidden');
+                } finally {
+                    flashcardLoading.classList.add('hidden');
+                }
+            }
+        }
+
+        // Display current flashcard
+        function displayFlashcard() {
+            if (currentFlashcards.length === 0) {
+                flashcardQuestionDisplay.innerHTML = "Aucune flashcard disponible.";
+                flashcardAnswerDisplay.innerHTML = "";
+                flashcardCard.classList.remove('flipped');
+                isFlashcardFlipped = false;
+                flipFlashcardBtn.disabled = true;
+                prevFlashcardBtn.disabled = true;
+                nextFlashcardBtn.disabled = true;
+                currentFlashcardIndexDisplay.textContent = 0;
+                totalFlashcardsDisplay.textContent = 0;
+                return;
+            }
+
+            const flashcard = currentFlashcards[currentFlashcardIndex];
+            flashcardQuestionDisplay.innerHTML = marked.parse(flashcard.question);
+            flashcardAnswerDisplay.innerHTML = marked.parse(flashcard.answer);
+            
+            // Reset flip state and hide back of card
+            flashcardCard.classList.remove('flipped'); 
+            isFlashcardFlipped = false;
+
+            currentFlashcardIndexDisplay.textContent = currentFlashcardIndex + 1;
+            totalFlashcardsDisplay.textContent = currentFlashcards.length;
+
+            flipFlashcardBtn.disabled = false;
+            prevFlashcardBtn.disabled = (currentFlashcardIndex === 0);
+            nextFlashcardBtn.disabled = (currentFlashcardIndex === currentFlashcards.length - 1);
+        }
+
+        // NEW: Load marked.js for Markdown parsing
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
+        script.onload = () => {
+            marked.setOptions({
+                gfm: true, 
+                breaks: true, 
+                sanitize: true 
+            });
+            window.onload = loadDocuments; 
+        };
+        document.head.appendChild(script);
+
+        // Fallback if marked.js fails to load
+        if (!window.marked) {
+            console.warn("marked.js failed to load, Markdown rendering will not be available.");
+            window.onload = loadDocuments; 
+        }
+
     </script>
 </body>
 </html>
