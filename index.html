@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>RVsion - Répétition Espacée & Tests AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -246,6 +246,82 @@
             justify-content: center;
             overflow-y: auto;
         }
+        
+        /* Adaptations mobiles - À ajouter dans votre section <style> */
+        @media (max-width: 768px) {
+            .container {
+                margin: 0.5rem;
+                padding: 1rem;
+                border-radius: 8px;
+            }
+            
+            /* Réduction des marges/padding sur mobile */
+            .mobile-reduced-padding {
+                padding: 0.5rem !important;
+            }
+            
+            .mobile-text-sm {
+                font-size: 0.875rem !important;
+            }
+            
+            /* Stack les éléments flex sur mobile */
+            .mobile-stack {
+                flex-direction: column !important;
+            }
+            
+            /* Pleine largeur sur mobile */
+            .mobile-full-width {
+                width: 100% !important;
+            }
+            
+            /* Espacement réduit sur mobile */
+            .mobile-gap-2 {
+                gap: 0.5rem !important;
+            }
+            
+            /* Boutons adaptés mobile */
+            .mobile-btn-small {
+                padding: 0.5rem 0.75rem !important;
+                font-size: 0.875rem !important;
+            }
+            
+            /* Modales adaptées mobile */
+            .modal-content {
+                margin: 1rem !important;
+                max-height: 95vh !important;
+                overflow-y: auto !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* Très petits écrans */
+            .container {
+                margin: 0.25rem;
+                padding: 0.75rem;
+            }
+            
+            .mobile-xs-text {
+                font-size: 0.75rem !important;
+            }
+            
+            .mobile-xs-btn {
+                padding: 0.375rem 0.5rem !important;
+                font-size: 0.75rem !important;
+            }
+        }
+
+        /* Style responsive pour les tableaux */
+        @media (max-width: 768px) {
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .table-responsive table {
+                min-width: 600px;
+            }
+        }
+
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 p-4">
@@ -284,6 +360,14 @@
             </div>
             <div class="mt-4">
                 <button id="manageCategoriesBtn" class="btn btn-secondary w-full">⚙️ Gérer les Catégories</button>
+            </div>
+        </div>
+        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6 gap-4">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800">RVsion - Répétition Espacée & Tests AI</h1>
+            <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+                <input type="password" id="apiKeyInput" placeholder="Clé API Gemini" 
+                    class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto">
+                <button id="saveApiKeyBtn" class="btn btn-primary mobile-btn-small">💾 Sauver</button>
             </div>
         </div>
 
@@ -350,7 +434,7 @@
                 </div>
                 <div class="flex gap-2 mt-3">
                     <input type="text" id="aiChatInput" placeholder="Votre question ici..."
-                           class="p-2 border border-gray-300 rounded-lg flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500">
+                               class="p-2 border border-gray-300 rounded-lg flex-grow focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <button id="sendAIChatBtn" class="btn btn-primary">Envoyer</button>
                 </div>
             </div>
@@ -407,7 +491,7 @@
                 <div>
                     <label for="numQuestionsInput" class="block text-sm font-medium text-gray-700 mb-1">Nombre de questions (1-20) :</label>
                     <input type="number" id="numQuestionsInput" value="5" min="1" max="20"
-                           class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+                               class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div>
                     <label for="additionalContextInput" class="block text-sm font-medium text-gray-700 mb-1">Contexte ou instructions supplémentaires pour l'IA :</label>
@@ -443,7 +527,7 @@
                         </div>
                     <div id="quizWrittenAnswerArea" class="hidden">
                         <textarea id="quizWrittenAnswerInput" placeholder="Votre réponse ici..."
-                                  rows="6" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                                    rows="6" class="p-3 border border-gray-300 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
                     </div>
                     <div id="quizMatchingArea" class="hidden">
                         <p class="text-sm text-gray-500 italic mt-2">Les questions de type "relier" ne sont pas encore implémentées dans cette version.</p>
@@ -561,13 +645,55 @@
             <div class="flex justify-center gap-4 mb-6">
                 <button id="flipFlashcardBtn" class="btn btn-warning">🔄 Retourner</button>
             </div>
-            <div class="flex justify-between items-center mb-6">
-                <button id="prevFlashcardBtn" class="btn btn-secondary">← Précédent</button>
-                <span class="text-gray-700">Flashcard <span id="currentFlashcardIndexDisplay">0</span>/<span id="totalFlashcardsDisplay">0</span></span>
-                <button id="nextFlashcardBtn" class="btn btn-secondary">Suivant →</button>
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-2">
+                <button id="prevFlashcardBtn" class="btn btn-secondary mobile-full-width">← Précédent</button>
+                <span class="text-gray-700 text-center">Flashcard <span id="currentFlashcardIndexDisplay">0</span>/<span id="totalFlashcardsDisplay">0</span></span>
+                <button id="nextFlashcardBtn" class="btn btn-secondary mobile-full-width">Suivant →</button>
             </div>
+
+            <!-- New: Flashcard Generation and Management Controls -->
+            <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 class="text-lg font-semibold text-blue-800 mb-3">Générer/Gérer les Flashcards</h4>
+                <div class="flex flex-col gap-3">
+                    <div>
+                        <label for="numFlashcardsToGenerateInput" class="block text-sm font-medium text-gray-700 mb-1">Nombre de flashcards à générer (laissez vide pour l'IA) :</label>
+                        <input type="number" id="numFlashcardsToGenerateInput" placeholder="Ex: 10" min="1" class="p-2 border rounded-lg w-full">
+                    </div>
+                    <button id="generateFlashcardsWithAIButton" class="btn btn-primary">✨ Générer via IA</button>
+                    <button id="openManageFlashcardsModalButton" class="btn btn-secondary">⚙️ Gérer Manuellement</button>
+                </div>
+            </div>
+            <!-- End New -->
+
             <div class="flex justify-end">
                 <button id="closeFlashcardModalBtn" class="btn btn-primary">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modale de gestion des Flashcards (ajout/édition) -->
+    <div id="manageFlashcardsModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Gérer les Flashcards pour : <span id="manageFlashcardsDocumentName" class="font-bold text-blue-600"></span></h3>
+
+            <div class="mb-4">
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Ajouter une nouvelle Flashcard</h4>
+                <div class="flex flex-col gap-2">
+                    <input type="text" id="newFlashcardQuestionInput" placeholder="Question de la flashcard" class="p-2 border rounded-lg">
+                    <textarea id="newFlashcardAnswerInput" placeholder="Réponse de la flashcard" rows="3" class="p-2 border rounded-lg resize-y"></textarea>
+                    <button id="addFlashcardManuallyBtn" class="btn btn-primary">➕ Ajouter Manuellement</button>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h4 class="text-lg font-semibold text-gray-700 mb-2">Flashcards Existantes</h4>
+                <ul id="flashcardsManagementList" class="space-y-3">
+                    <!-- Flashcards will be listed here -->
+                </ul>
+            </div>
+
+            <div class="flex justify-end gap-4">
+                <button id="closeManageFlashcardsModalBtn" class="btn btn-secondary">Fermer</button>
             </div>
         </div>
     </div>
@@ -613,6 +739,10 @@
         const exportDataBtn = document.getElementById('exportDataBtn');
         const importDataBtn = document.getElementById('importDataBtn');
         const importFileInput = document.getElementById('importFileInput');
+
+        // Éléments de la clé API
+        const apiKeyInput = document.getElementById('apiKeyInput');
+        const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
 
         // Modale de révision
         const reviewModal = document.getElementById('reviewModal');
@@ -710,9 +840,23 @@
         const closeFlashcardModalBtn = document.getElementById('closeFlashcardModalBtn');
         const flashcardLoading = document.getElementById('flashcardLoading');
 
+        // NEW Flashcard Management Elements
+        const manageFlashcardsModal = document.getElementById('manageFlashcardsModal');
+        const manageFlashcardsDocumentName = document.getElementById('manageFlashcardsDocumentName');
+        const newFlashcardQuestionInput = document.getElementById('newFlashcardQuestionInput');
+        const newFlashcardAnswerInput = document.getElementById('newFlashcardAnswerInput');
+        const addFlashcardManuallyBtn = document.getElementById('addFlashcardManuallyBtn');
+        const flashcardsManagementList = document.getElementById('flashcardsManagementList');
+        const closeManageFlashcardsModalBtn = document.getElementById('closeManageFlashcardsModalBtn');
+        const numFlashcardsToGenerateInput = document.getElementById('numFlashcardsToGenerateInput'); // New input for number of flashcards
+        const generateFlashcardsWithAIButton = document.getElementById('generateFlashcardsWithAIButton'); // Button to trigger generation with count
+        const openManageFlashcardsModalButton = document.getElementById('openManageFlashcardsModalButton'); // Button to open manage flashcards modal
+
+
         let currentFlashcards = [];
         let currentFlashcardIndex = 0;
         let isFlashcardFlipped = false;
+        let currentManagingDocumentId = null; // To track which document's flashcards are being managed
 
 
         let documents = [];
@@ -727,8 +871,25 @@
 
         let currentQuestionIndex = 0; 
 
-        // API Key pour Gemini (votre clé que vous avez fournie)
-        const apiKey = "";
+        let editingDocumentId = null; // New global variable to track document being edited
+
+
+        // API Key pour Gemini (sera chargée depuis localStorage)
+        let apiKey = ""; 
+
+        /**
+         * Charge la clé API Gemini depuis le localStorage.
+         */
+        function loadApiKeyFromLocalStorage() {
+            const storedApiKey = localStorage.getItem('geminiApiKey');
+            if (storedApiKey) {
+                apiKey = storedApiKey;
+                apiKeyInput.value = storedApiKey;
+                console.log("Clé API chargée depuis localStorage.");
+            } else {
+                console.log("Aucune clé API trouvée dans localStorage.");
+            }
+        }
 
         /**
          * Affiche une modale d'alerte personnalisée.
@@ -906,9 +1067,9 @@
 
             const filteredDocuments = documents.filter(doc => {
                 const matchesSearch = doc.name.toLowerCase().includes(searchTerm) || 
-                                      doc.content.toLowerCase().includes(searchTerm) ||
-                                      (doc.category && doc.category.toLowerCase().includes(searchTerm)) || 
-                                      (doc.subcategory && doc.subcategory.toLowerCase().includes(searchTerm)); 
+                                        doc.content.toLowerCase().includes(searchTerm) ||
+                                        (doc.category && doc.category.toLowerCase().includes(searchTerm)) || 
+                                        (doc.subcategory && doc.subcategory.toLowerCase().includes(searchTerm)); 
                 
                 const nextReviewDate = new Date(doc.nextReview);
                 nextReviewDate.setHours(0, 0, 0, 0);
@@ -937,8 +1098,8 @@
             if (filteredDocuments.length === 0 && (searchTerm.length > 0 || filterStatus !== 'all' || filterCategory !== null || filterSubcategory !== null)) {
                 allDocumentsList.innerHTML = '<p class="text-gray-600 italic">Aucun document ne correspond à vos critères de recherche/filtre.</p>';
             } else if (filteredDocuments.length === 0 && searchTerm.length === 0 && filterStatus === 'all' && filterCategory === null && filterSubcategory === null) {
-                 noDocumentsYetMessage.style.display = 'block';
-                 allDocumentsList.innerHTML = ''; 
+                    noDocumentsYetMessage.style.display = 'block';
+                    allDocumentsList.innerHTML = ''; 
             } else if (filteredDocuments.length === 0) {
                 allDocumentsList.innerHTML = '<p class="text-gray-600 italic">Aucun document ne correspond à vos critères de recherche/filtre.</p>';
             }
@@ -957,10 +1118,11 @@
                     <p class="text-sm text-gray-600">Dernière révision: ${formatDate(doc.lastReviewed)}</p>
                     <p class="text-sm text-gray-600">Prochaine révision: <span class="font-medium ${isDueToday ? 'text-blue-700' : 'text-gray-700'}">${formatDate(doc.nextReview)}</span></p>
                     <p class="text-xs text-gray-500 mt-1">EF: ${doc.easeFactor.toFixed(2)} | Intervalle: ${doc.currentInterval} jours | Révisions réussies: ${doc.consecutiveSuccessfulReviews}</p>
-                    <div class="mt-4 flex justify-end gap-2">
+                    <div class="mt-4 flex justify-end gap-2 flex-wrap">
                         <button data-id="${doc.id}" class="btn btn-success review-btn">📝 Réviser</button>
                         <button data-id="${doc.id}" class="btn btn-warning test-ai-btn">✨ Test (IA)</button>
                         <button data-id="${doc.id}" class="btn btn-info flashcards-btn">🗂️ Flashcards</button>
+                        <button data-id="${doc.id}" class="btn btn-info edit-document-btn">✏️ Modifier</button>
                         <button data-id="${doc.id}" class="btn btn-danger delete-btn">🗑️ Supprimer</button>
                     </div>
                 `;
@@ -1072,6 +1234,12 @@
         
         addDocumentBtn.addEventListener('click', async () => {
             try {
+                // Vérifier si la clé API est présente
+                if (!apiKey) {
+                    showAlert("Veuillez d'abord sauvegarder votre clé API Gemini. Le traitement AI ne fonctionnera pas sans elle.", "Clé API manquante", "warning");
+                    return;
+                }
+
                 const name = documentNameInput.value.trim();
                 const selectedCategoryId = documentCategorySelect.value;
                 const selectedSubcategoryId = documentSubcategorySelect.value;
@@ -1130,34 +1298,57 @@
                     }
                 }
 
-                const newDoc = {
-                    id: crypto.randomUUID(),
-                    name: name,
-                    category: categoryName,
-                    subcategory: subcategoryName,
-                    content: content,
-                    lastReviewed: new Date().toISOString(),
-                    nextReview: new Date().toISOString(),
-                    easeFactor: 2.5,
-                    consecutiveSuccessfulReviews: 0,
-                    currentInterval: 0,
-                    aiTests: [],
-                    aiChatHistory: [],
-                    flashcards: [] 
-                };
-                documents.push(newDoc);
-                saveDocuments();
-                renderDocuments();
-                documentNameInput.value = '';
-                documentCategorySelect.value = '';
-                documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>';
-                documentSubcategorySelect.disabled = true;
-                documentContentInput.value = '';
-                aiDocumentActionSelect.value = 'none'; 
-                showAlert('Document ajouté avec succès !', 'Succès', 'success');
+                if (editingDocumentId) {
+                    // Update existing document
+                    const docToUpdate = documents.find(d => d.id === editingDocumentId);
+                    if (docToUpdate) {
+                        docToUpdate.name = name;
+                        docToUpdate.category = categoryName;
+                        docToUpdate.subcategory = subcategoryName;
+                        docToUpdate.content = content;
+                        saveDocuments();
+                        renderDocuments();
+                        addDocumentBtn.textContent = '➕ Ajouter le document'; // Reset button text
+                        showAlert('Document modifié avec succès !', 'Succès', 'success');
+                        editingDocumentId = null; // Clear editing state
+                        documentNameInput.value = '';
+                        documentCategorySelect.value = '';
+                        documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>';
+                        documentSubcategorySelect.disabled = true;
+                        documentContentInput.value = '';
+                        aiDocumentActionSelect.value = 'none';
+                    }
+                } else {
+                    // Add new document
+                    const newDoc = {
+                        id: crypto.randomUUID(),
+                        name: name,
+                        category: categoryName,
+                        subcategory: subcategoryName,
+                        content: content,
+                        lastReviewed: new Date().toISOString(),
+                        nextReview: new Date().toISOString(),
+                        easeFactor: 2.5,
+                        consecutiveSuccessfulReviews: 0,
+                        currentInterval: 0,
+                        aiTests: [],
+                        aiChatHistory: [],
+                        flashcards: [] 
+                    };
+                    documents.push(newDoc);
+                    saveDocuments();
+                    renderDocuments();
+                    documentNameInput.value = '';
+                    documentCategorySelect.value = '';
+                    documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>';
+                    documentSubcategorySelect.disabled = true;
+                    documentContentInput.value = '';
+                    aiDocumentActionSelect.value = 'none'; 
+                    showAlert('Document ajouté avec succès !', 'Succès', 'success');
+                }
             } catch (error) {
-                console.error("Erreur lors de l'ajout du document:", error);
-                showAlert("Une erreur est survenue lors de l'ajout du document. Veuillez consulter la console pour plus de détails.", "Erreur d'ajout", 'error');
+                console.error("Erreur lors de l'ajout/modification du document:", error);
+                showAlert("Une erreur est survenue lors de l'ajout/modification du document. Veuillez consulter la console pour plus de détails.", "Erreur d'ajout/modification", 'error');
             }
         });
 
@@ -1169,6 +1360,11 @@
          * @returns {Promise<string>} Le contenu traité par l'IA.
          */
         async function processDocumentContentWithAI(originalContent, action, documentName) {
+            // Vérifier si la clé API est définie
+            if (!apiKey) {
+                throw new Error("Clé API Gemini non configurée. Veuillez la sauvegarder via le champ dédié.");
+            }
+
             let prompt = "";
             if (action === 'develop') {
                 prompt = `En tant qu'expert en pédagogie, développez un cours complet et détaillé sur le sujet "${documentName}".
@@ -1236,6 +1432,11 @@ Fournissez uniquement le contenu optimisé.`;
                 button.removeEventListener('click', handleFlashcardsButtonClick);
                 button.addEventListener('click', handleFlashcardsButtonClick);
             });
+            // Add listener for edit document
+            document.querySelectorAll('.edit-document-btn').forEach(button => {
+                button.removeEventListener('click', handleEditDocumentButtonClick);
+                button.addEventListener('click', handleEditDocumentButtonClick);
+            });
             // Removed synthesis button listener
         }
 
@@ -1280,6 +1481,12 @@ Fournissez uniquement le contenu optimisé.`;
 
         // Gestionnaire pour le bouton "Test (IA)" (Ouvre la modale de configuration)
         function handleTestAIButtonClick(event) {
+            // Vérifier si la clé API est présente
+            if (!apiKey) {
+                showAlert("Veuillez d'abord sauvegarder votre clé API Gemini. La préparation du test AI ne fonctionnera pas sans elle.", "Clé API manquante", "warning");
+                return;
+            }
+
             const docId = event.target.dataset.id;
             const doc = documents.find(d => d.id === docId);
             if (doc) {
@@ -1296,6 +1503,12 @@ Fournissez uniquement le contenu optimisé.`;
         }
 
         prepareInteractiveTestBtn.addEventListener('click', async () => {
+            // Vérifier si la clé API est présente
+            if (!apiKey) {
+                showAlert("Clé API Gemini non configurée. Impossible de générer le test AI.", "Clé API manquante", "error");
+                return;
+            }
+
             if (!currentDocumentForTest) {
                 showAlert("Erreur: Aucun document sélectionné pour préparer le test.", "Erreur", 'error');
                 return;
@@ -1403,7 +1616,6 @@ Niveau de difficulté souhaité pour le test : ${difficulty || 'Moyen'}
 Nombre de questions : ${numQuestions}
 Contexte ou instructions supplémentaires : ${additionalContext || 'Aucun'}
 `; 
-
                 let chatHistory = [];
                 chatHistory.push({ role: "user", parts: [{ text: prompt }] });
                 const payload = { 
@@ -1460,7 +1672,7 @@ Contexte ou instructions supplémentaires : ${additionalContext || 'Aucun'}
                                 };
                                 const docIndex = documents.findIndex(d => d.id === currentDocumentForTest.id);
                                 if (!documents[docIndex].aiTests) {
-                                    documents[doc个体].aiTests = [];
+                                    documents[docIndex].aiTests = [];
                                 }
                                 documents[docIndex].aiTests.push(newAITest);
                                 saveDocuments();
@@ -1574,6 +1786,12 @@ Contexte ou instructions supplémentaires : ${additionalContext || 'Aucun'}
         }
 
         function handleDoAITestButtonClick(event) {
+            // Vérifier si la clé API est présente
+            if (!apiKey) {
+                showAlert("Veuillez d'abord sauvegarder votre clé API Gemini. Le test AI ne fonctionnera pas sans elle.", "Clé API manquante", "warning");
+                return;
+            }
+
             const docId = event.target.dataset.docId;
             const testId = event.target.dataset.testId;
 
@@ -1741,6 +1959,12 @@ Contexte ou instructions supplémentaires : ${additionalContext || 'Aucun'}
 
         // Terminer le quiz et soumettre les réponses à l'IA pour évaluation
         submitQuizBtn.addEventListener('click', async () => {
+            // Vérifier si la clé API est présente
+            if (!apiKey) {
+                showAlert("Clé API Gemini non configurée. Impossible d'évaluer le test AI.", "Clé API manquante", "error");
+                return;
+            }
+
             if (!currentAITestBeingAnswered || !currentDocumentForTest) {
                 showAlert("Erreur: Aucun quiz ou document actif pour l'évaluation AI.", "Erreur", 'error');
                 return;
@@ -2096,6 +2320,7 @@ Votre réponse doit être structurée comme follows en utilisant des sections cl
             const categoryId = event.target.dataset.categoryId;
             const category = categories.find(cat => cat.id === categoryId);
             if (category) {
+                // Remplacé prompt() par une alerte personnalisée avec input si nécessaire, ou simplification
                 const subcategoryName = prompt(`Ajouter une sous-catégorie pour "${category.name}" :`);
                 if (subcategoryName && subcategoryName.trim()) {
                     if (category.subcategories.some(sub => sub.name.toLowerCase() === subcategoryName.trim().toLowerCase())) {
@@ -2116,7 +2341,7 @@ Votre réponse doit être structurée comme follows en utilisant des sections cl
             const categoryId = event.target.dataset.categoryId;
             const categoryToDelete = categories.find(cat => cat.id === categoryId);
             if (categoryToDelete) {
-                const confirmed = await showConfirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${categoryToDelete.name}" et toutes ses sous-catégories ? Les documents associés seront "Non classés".`, 'Supprimer la catégorie');
+                const confirmed = await showConfirm(`Êtes-vous sûr de vouloir supprimer la catégorie "${categoryToDelete.name}" et toutes ses sous-catégories ? Les documents associés seront "Non classés".`, 'Confirmation de suppression');
                 if (confirmed) {
                     categories = categories.filter(cat => cat.id !== categoryId);
                     documents.forEach(doc => {
@@ -2166,15 +2391,22 @@ Votre réponse doit être structurée comme follows en utilisant des sections cl
             if (role === 'user') {
                 messageDiv.classList.add('chat-message-user'); 
             } else {
+                // Keep 'chat-message-ai' class for styling, but API role is 'model'
                 messageDiv.classList.add('chat-message-ai'); 
             }
-            messageDiv.textContent = text;
+            messageDiv.textContent = text; // Use textContent for security and simple display
             aiChatDisplay.appendChild(messageDiv);
             aiChatDisplay.scrollTop = aiChatDisplay.scrollHeight; 
         }
 
         // Événement d'envoi de message au chat AI
         sendAIChatBtn.addEventListener('click', async () => {
+            // Vérifier si la clé API est présente
+            if (!apiKey) {
+                showAlert("Veuillez d'abord sauvegarder votre clé API Gemini. Le chat AI ne fonctionnera pas sans elle.", "Clé API manquante", "warning");
+                return;
+            }
+
             const userMessage = aiChatInput.value.trim();
             if (!userMessage) {
                 showAlert("Veuillez taper votre question.", "Question vide", 'warning');
@@ -2196,16 +2428,19 @@ Votre réponse doit être structurée comme follows en utilisant des sections cl
 
             try {
                 const documentContent = doc.content;
-                let prompt = `En tant qu'assistant pédagogique, répondez à la question de l'apprenant. Utilisez le contenu du cours suivant pour des informations spécifiques, et complétez avec vos connaissances générales si nécessaire. Si la réponse n'est pas claire dans le cours, utilisez vos connaissances pour fournir une réponse complète et utile.
+                // Construct the prompt using the entire chat history for context
+                let currentChatHistory = doc.aiChatHistory.map(msg => ({
+                    role: msg.role === 'ai' ? 'model' : msg.role, // FIX: Map 'ai' role to 'model' for API
+                    parts: [{ text: msg.text }]
+                }));
 
----
-Contenu du cours :
-${documentContent}
----
+                // Ensure the initial system prompt is sent with the first user message only
+                // This structure is fine as is, since the 'initialPrompt' becomes part of the
+                // first user message's text, and subsequent turns just alternate user/model roles.
+                // The main fix is ensuring all 'ai' roles from `doc.aiChatHistory` are converted to 'model'
+                // when sending to the Gemini API.
 
-Question de l'apprenant : "${userMessage}"`;
-                
-                const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }] }; 
+                const payload = { contents: currentChatHistory }; 
 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
@@ -2226,7 +2461,7 @@ Question de l'apprenant : "${userMessage}"`;
                         result.candidates[0].content.parts.length > 0) {
                         const aiResponseText = result.candidates[0].content.parts[0].text;
                         displayChatMessage('ai', aiResponseText);
-                        doc.aiChatHistory.push({ role: 'ai', text: aiResponseText });
+                        doc.aiChatHistory.push({ role: 'model', text: aiResponseText }); // FIX: Push with 'model' role
                         saveDocuments();
                     } else {
                         console.error('Structure de réponse inattendue de l\'API Gemini pour le chat:', result);
@@ -2360,14 +2595,16 @@ Question de l'apprenant : "${userMessage}"`;
                 testConfigModal.classList.add('hidden');
                 currentDocumentForTest = null;
             });
-            prepareInteractiveTestBtn.addEventListener('click', async () => { /* Logic defined above */ });
-            nextQuestionBtn.addEventListener('click', () => { /* Logic defined above */ });
-            prevQuestionBtn.addEventListener('click', () => { /* Logic defined above */ });
-            startQuizTimerBtn.addEventListener('click', () => { /* Logic defined above */ });
-            submitQuizBtn.addEventListener('click', async () => { /* Logic defined above */ });
-            reEvaluateUnderstandingBtn.addEventListener('click', () => { /* Logic defined above */ });
-            closeQuizResultsBtn.addEventListener('click', () => { /* Logic defined above */ });
-            saveAndQuitQuizBtn.addEventListener('click', async () => { /* Logic defined above */ }); 
+            // La logique de ces boutons est définie plus haut et ne doit pas être ré-assignée ici
+            // prepareInteractiveTestBtn.addEventListener('click', async () => { /* Logic defined above */ });
+            // nextQuestionBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // prevQuestionBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // startQuizTimerBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // submitQuizBtn.addEventListener('click', async () => { /* Logic defined above */ });
+            // reEvaluateUnderstandingBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // closeQuizResultsBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // saveAndQuitQuizBtn.addEventListener('click', async () => { /* Logic defined above */ }); 
+            
             searchDocumentInput.addEventListener('input', renderDocuments);
             filterStatusSelect.addEventListener('change', renderDocuments);
             documentCategorySelect.addEventListener('change', () => {
@@ -2408,14 +2645,14 @@ Question de l'apprenant : "${userMessage}"`;
                 renderDocuments();
             });
             filterSubcategorySelect.addEventListener('change', renderDocuments);
-            exportDataBtn.addEventListener('click', () => { /* Logic defined above */ });
-            importDataBtn.addEventListener('click', () => { /* Logic defined above */ });
-            importFileInput.addEventListener('change', (event) => { /* Logic defined above */ });
-            closeCorrectionBtn.addEventListener('click', () => { /* Logic defined above */ });
-            manageCategoriesBtn.addEventListener('click', () => { /* Logic defined above */ });
-            closeCategoryManagementBtn.addEventListener('click', () => { /* Logic defined above */ });
-            addCategoryBtn.addEventListener('click', () => { /* Logic defined above */ });
-            scoreButtons.forEach(button => { /* Logic defined above */ });
+            // exportDataBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // importDataBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // importFileInput.addEventListener('change', (event) => { /* Logic defined above */ });
+            // closeCorrectionBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // manageCategoriesBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // closeCategoryManagementBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // addCategoryBtn.addEventListener('click', () => { /* Logic defined above */ });
+            // scoreButtons.forEach(button => { /* Logic defined above */ });
 
             // Flashcard specific event listeners
             flipFlashcardBtn.addEventListener('click', () => {
@@ -2439,13 +2676,84 @@ Question de l'apprenant : "${userMessage}"`;
                 currentFlashcards = [];
                 currentFlashcardIndex = 0;
                 isFlashcardFlipped = false;
+                numFlashcardsToGenerateInput.value = ''; // Reset input
+                generateFlashcardsWithAIButton.classList.add('hidden'); // Hide until doc selected again
             });
-            // Removed synthesis specific event listener
+
+            // NEW Flashcard Management Modal Buttons
+            openManageFlashcardsModalButton.addEventListener('click', () => {
+                if (!currentManagingDocumentId) {
+                    showAlert("Veuillez sélectionner un document pour gérer les flashcards.", "Document manquant", "warning");
+                    return;
+                }
+                flashcardModal.classList.add('hidden'); // Hide main flashcard modal
+                openManageFlashcardsModal(currentManagingDocumentId);
+            });
+            closeManageFlashcardsModalBtn.addEventListener('click', () => {
+                manageFlashcardsModal.classList.add('hidden');
+                // Reopen the main flashcard modal, preserving state if desired
+                if (currentManagingDocumentId) {
+                    handleFlashcardsButtonClick({ target: { dataset: { id: currentManagingDocumentId } } });
+                }
+            });
+            generateFlashcardsWithAIButton.addEventListener('click', () => {
+                const num = parseInt(numFlashcardsToGenerateInput.value);
+                generateFlashcardsAI(currentManagingDocumentId, num);
+            });
+            addFlashcardManuallyBtn.addEventListener('click', () => {
+                const question = newFlashcardQuestionInput.value.trim();
+                const answer = newFlashcardAnswerInput.value.trim();
+
+                if (question && answer) {
+                    const doc = documents.find(d => d.id === currentManagingDocumentId);
+                    if (doc) {
+                        if (!doc.flashcards) {
+                            doc.flashcards = [];
+                        }
+                        doc.flashcards.push({ id: crypto.randomUUID(), question, answer });
+                        saveDocuments();
+                        renderFlashcardsManagementList();
+                        newFlashcardQuestionInput.value = '';
+                        newFlashcardAnswerInput.value = '';
+                        showAlert('Flashcard ajoutée manuellement !', 'Succès', 'success');
+                        // If currently viewing flashcards, update display
+                        if (flashcardModal.classList.contains('hidden') === false) {
+                            currentFlashcards = doc.flashcards; // Update the current flashcards array
+                            currentFlashcardIndex = currentFlashcards.length - 1; // Go to new card
+                            displayFlashcard();
+                        }
+                    }
+                } else {
+                    showAlert('Veuillez entrer une question et une réponse pour la flashcard.', 'Champs vides', 'error');
+                }
+            });
+
+
+            // --- NEW: API Key Save Listener ---
+            saveApiKeyBtn.addEventListener('click', () => {
+                const newKey = apiKeyInput.value.trim();
+                if (newKey) {
+                    localStorage.setItem('geminiApiKey', newKey);
+                    apiKey = newKey; // Update the global API key
+                    showAlert('Clé API Gemini sauvegardée avec succès !', 'Succès', 'success');
+                } else {
+                    localStorage.removeItem('geminiApiKey'); // Clear the key if input is empty
+                    apiKey = ""; // Clear global API key
+                    showAlert('Clé API Gemini effacée du stockage local.', 'Information', 'info');
+                }
+            });
+            // --- END NEW: API Key Save Listener ---
         }
         // --- END Global Event Listener Initialization ---
 
         // Handler for Flashcards button click
         async function handleFlashcardsButtonClick(event) {
+            // Vérifier si la clé API est présente
+            if (!apiKey) {
+                showAlert("Veuillez d'abord sauvegarder votre clé API Gemini. La génération de flashcards ne fonctionnera pas sans elle.", "Clé API manquante", "warning");
+                return;
+            }
+
             const docId = event.target.dataset.id;
             const doc = documents.find(d => d.id === docId);
             if (!doc) return;
@@ -2459,6 +2767,7 @@ Question de l'apprenant : "${userMessage}"`;
             flashcardAnswerDisplay.innerHTML = ''; // Use innerHTML for Markdown
             flashcardCard.classList.remove('flipped'); // Ensure not flipped initially
             isFlashcardFlipped = false;
+            currentManagingDocumentId = docId; // Set the document being managed for flashcards
 
             if (doc.flashcards && doc.flashcards.length > 0) {
                 currentFlashcards = doc.flashcards;
@@ -2466,8 +2775,40 @@ Question de l'apprenant : "${userMessage}"`;
                 flashcardLoading.classList.add('hidden');
                 displayFlashcard();
             } else {
-                try {
-                    const prompt = `Génère 10 flashcards (question et réponse) en format JSON à partir du texte suivant.
+                // If no flashcards, suggest generation
+                flashcardLoading.classList.add('hidden');
+                showAlert("Aucune flashcard existante. Générez-en via l'IA ou ajoutez-en manuellement.", "Flashcards", "info");
+                numFlashcardsToGenerateInput.value = '10'; // Default value
+                displayFlashcard(); // Display "no flashcards" message
+            }
+        }
+
+        async function generateFlashcardsAI(docId, numFlashcards) {
+            if (!apiKey) {
+                showAlert("Veuillez d'abord sauvegarder votre clé API Gemini. La génération de flashcards ne fonctionnera pas sans elle.", "Clé API manquante", "warning");
+                return;
+            }
+            const doc = documents.find(d => d.id === docId);
+            if (!doc) return;
+
+            flashcardLoading.classList.remove('hidden');
+            flipFlashcardBtn.disabled = true;
+            prevFlashcardBtn.disabled = true;
+            nextFlashcardBtn.disabled = true;
+
+            try {
+                let prompt = `Génère ${numFlashcards && !isNaN(numFlashcards) ? numFlashcards : '10'} flashcards (question et réponse) en format JSON à partir du texte suivant.
+                Le JSON doit avoir une propriété "flashcards" qui est un tableau d'objets. Chaque objet flashcard doit avoir les propriétés "question" (string) et "answer" (string).
+                Utilise le formatage Markdown (texte en gras avec **, listes à puces avec -) pour le contenu des questions et réponses si cela améliore la clarté.
+                Texte du document:
+                ---
+                ${doc.content}
+                ---
+                Fournis uniquement le JSON.`;
+
+                // If numFlashcards is not provided, modify prompt for AI to decide
+                if (!numFlashcards || isNaN(numFlashcards)) {
+                    prompt = `Génère un nombre suffisant et pertinent de flashcards (question et réponse) en format JSON à partir du texte suivant.
                     Le JSON doit avoir une propriété "flashcards" qui est un tableau d'objets. Chaque objet flashcard doit avoir les propriétés "question" (string) et "answer" (string).
                     Utilise le formatage Markdown (texte en gras avec **, listes à puces avec -) pour le contenu des questions et réponses si cela améliore la clarté.
                     Texte du document:
@@ -2475,71 +2816,79 @@ Question de l'apprenant : "${userMessage}"`;
                     ${doc.content}
                     ---
                     Fournis uniquement le JSON.`;
-
-                    let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
-                    const payload = { 
-                        contents: chatHistory,
-                        generationConfig: {
-                            responseMimeType: "application/json",
-                            responseSchema: {
-                                type: "OBJECT",
-                                properties: {
-                                    "flashcards": {
-                                        "type": "ARRAY",
-                                        "items": {
-                                            "type": "OBJECT",
-                                            "properties": {
-                                                "question": { "type": "STRING" },
-                                                "answer": { "type": "STRING" }
-                                            },
-                                            "required": ["question", "answer"]
-                                        }
-                                    }
-                                },
-                                "required": ["flashcards"]
-                            }
-                        }
-                    };
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(`Échec de l'IA: ${errorData.error?.message || response.statusText}`);
-                    }
-                    const result = await response.json();
-                    const flashcardData = JSON.parse(result.candidates[0].content.parts[0].text);
-
-                    if (flashcardData.flashcards && Array.isArray(flashcardData.flashcards) && flashcardData.flashcards.length > 0) {
-                        doc.flashcards = flashcardData.flashcards;
-                        saveDocuments();
-                        currentFlashcards = doc.flashcards;
-                        currentFlashcardIndex = 0;
-                        displayFlashcard();
-                        showAlert('Flashcards générées avec succès !', 'Succès AI', 'success');
-                    } else {
-                        showAlert('L\'IA n\'a pas pu générer les flashcards.', 'Erreur AI', 'error');
-                        flashcardModal.classList.add('hidden');
-                    }
-                } catch (error) {
-                    console.error('Erreur lors de la génération des flashcards:', error);
-                    showAlert('Erreur lors de la génération des flashcards: ' + error.message, 'Erreur AI', 'error');
-                    flashcardModal.classList.add('hidden');
-                } finally {
-                    flashcardLoading.classList.add('hidden');
                 }
+
+
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                "flashcards": {
+                                    "type": "ARRAY",
+                                    "items": {
+                                        "type": "OBJECT",
+                                        "properties": {
+                                            "question": { "type": "STRING" },
+                                            "answer": { "type": "STRING" }
+                                        },
+                                        "required": ["question", "answer"]
+                                    }
+                                }
+                            },
+                            "required": ["flashcards"]
+                        }
+                    }
+                };
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Échec de l'IA: ${errorData.error?.message || response.statusText}`);
+                }
+                const result = await response.json();
+                const flashcardData = JSON.parse(result.candidates[0].content.parts[0].text);
+
+                if (flashcardData.flashcards && Array.isArray(flashcardData.flashcards) && flashcardData.flashcards.length > 0) {
+                    doc.flashcards = flashcardData.flashcards.map(fc => ({
+                        id: crypto.randomUUID(), // Add unique ID for manual editing/deletion
+                        question: fc.question,
+                        answer: fc.answer
+                    }));
+                    saveDocuments();
+                    currentFlashcards = doc.flashcards;
+                    currentFlashcardIndex = 0;
+                    displayFlashcard();
+                    showAlert('Flashcards générées avec succès !', 'Succès AI', 'success');
+                } else {
+                    showAlert('L\'IA n\'a pas pu générer les flashcards.', 'Erreur AI', 'error');
+                    flashcardModal.classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('Erreur lors de la génération des flashcards:', error);
+                showAlert('Erreur lors de la génération des flashcards: ' + error.message, 'Erreur AI', 'error');
+                flashcardModal.classList.add('hidden');
+            } finally {
+                flashcardLoading.classList.add('hidden');
+                flipFlashcardBtn.disabled = currentFlashcards.length === 0;
+                prevFlashcardBtn.disabled = currentFlashcards.length === 0 || currentFlashcardIndex === 0;
+                nextFlashcardBtn.disabled = currentFlashcards.length === 0 || currentFlashcardIndex === currentFlashcards.length - 1;
             }
         }
 
         // Display current flashcard
         function displayFlashcard() {
             if (currentFlashcards.length === 0) {
-                flashcardQuestionDisplay.innerHTML = "Aucune flashcard disponible.";
+                flashcardQuestionDisplay.innerHTML = marked.parse("Aucune flashcard disponible. Générez-en via l'IA ou ajoutez-en manuellement.");
                 flashcardAnswerDisplay.innerHTML = "";
                 flashcardCard.classList.remove('flipped');
                 isFlashcardFlipped = false;
@@ -2567,6 +2916,150 @@ Question de l'apprenant : "${userMessage}"`;
             nextFlashcardBtn.disabled = (currentFlashcardIndex === currentFlashcards.length - 1);
         }
 
+        // Flashcard Management functions
+        function openManageFlashcardsModal(docId) {
+            currentManagingDocumentId = docId;
+            const doc = documents.find(d => d.id === docId);
+            if (!doc) return;
+
+            manageFlashcardsDocumentName.textContent = doc.name;
+            renderFlashcardsManagementList();
+            manageFlashcardsModal.classList.remove('hidden');
+            newFlashcardQuestionInput.value = '';
+            newFlashcardAnswerInput.value = '';
+        }
+
+        function renderFlashcardsManagementList() {
+            flashcardsManagementList.innerHTML = '';
+            const doc = documents.find(d => d.id === currentManagingDocumentId);
+            if (!doc || !doc.flashcards || doc.flashcards.length === 0) {
+                flashcardsManagementList.innerHTML = '<li class="text-gray-600 italic">Aucune flashcard pour l\'instant.</li>';
+                return;
+            }
+
+            doc.flashcards.forEach(fc => {
+                const li = document.createElement('li');
+                li.className = 'bg-gray-100 p-3 rounded-lg shadow-sm';
+                li.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-semibold text-gray-800 flex-grow mr-2">Q: ${marked.parse(fc.question).replace(/<p>|<\/p>/g, '')}</span>
+                        <div class="flex gap-2">
+                            <button data-flashcard-id="${fc.id}" class="btn btn-info text-xs px-2 py-1 edit-flashcard-btn">✏️</button>
+                            <button data-flashcard-id="${fc.id}" class="btn btn-danger text-xs px-2 py-1 delete-flashcard-btn">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center text-sm text-gray-600">
+                        <span class="flex-grow mr-2">R: ${marked.parse(fc.answer).replace(/<p>|<\/p>/g, '')}</span>
+                    </div>
+                `;
+                flashcardsManagementList.appendChild(li);
+            });
+
+            attachFlashcardManagementEventListeners();
+        }
+
+        function attachFlashcardManagementEventListeners() {
+            document.querySelectorAll('.edit-flashcard-btn').forEach(button => {
+                button.removeEventListener('click', handleEditFlashcardClick);
+                button.addEventListener('click', handleEditFlashcardClick);
+            });
+            document.querySelectorAll('.delete-flashcard-btn').forEach(button => {
+                button.removeEventListener('click', handleDeleteFlashcardClick);
+                button.addEventListener('click', handleDeleteFlashcardClick);
+            });
+        }
+
+        async function handleEditFlashcardClick(event) {
+            const flashcardId = event.target.dataset.flashcardId;
+            const doc = documents.find(d => d.id === currentManagingDocumentId);
+            if (!doc) return;
+            const flashcardToEdit = doc.flashcards.find(fc => fc.id === flashcardId);
+            if (flashcardToEdit) {
+                const newQuestion = prompt('Modifier la question:', flashcardToEdit.question);
+                if (newQuestion === null) return; // User cancelled
+                const newAnswer = prompt('Modifier la réponse:', flashcardToEdit.answer);
+                if (newAnswer === null) return; // User cancelled
+
+                if (newQuestion.trim() && newAnswer.trim()) {
+                    flashcardToEdit.question = newQuestion.trim();
+                    flashcardToEdit.answer = newAnswer.trim();
+                    saveDocuments();
+                    renderFlashcardsManagementList();
+                    showAlert('Flashcard modifiée avec succès !', 'Succès', 'success');
+                    // If currently viewing flashcards, update display
+                    if (flashcardModal.classList.contains('hidden') === false) {
+                        displayFlashcard();
+                    }
+                } else {
+                    showAlert('La question et la réponse ne peuvent pas être vides.', 'Champs vides', 'error');
+                }
+            }
+        }
+
+        async function handleDeleteFlashcardClick(event) {
+            const flashcardId = event.target.dataset.flashcardId;
+            const doc = documents.find(d => d.id === currentManagingDocumentId);
+            if (!doc) return;
+            const flashcardToDelete = doc.flashcards.find(fc => fc.id === flashcardId);
+
+            if (flashcardToDelete) {
+                const confirmed = await showConfirm(`Êtes-vous sûr de vouloir supprimer cette flashcard ?`, 'Confirmer la suppression');
+                if (confirmed) {
+                    doc.flashcards = doc.flashcards.filter(fc => fc.id !== flashcardId);
+                    saveDocuments();
+                    renderFlashcardsManagementList();
+                    showAlert('Flashcard supprimée.', 'Succès', 'success');
+                    // If currently viewing flashcards, refresh display and reset index if necessary
+                    if (flashcardModal.classList.contains('hidden') === false) {
+                        if (currentFlashcardIndex >= doc.flashcards.length && doc.flashcards.length > 0) {
+                            currentFlashcardIndex = doc.flashcards.length - 1;
+                        }
+                        displayFlashcard();
+                    }
+                }
+            }
+        }
+
+        function handleEditDocumentButtonClick(event) {
+            const docId = event.target.dataset.id;
+            const doc = documents.find(d => d.id === docId);
+            if (doc) {
+                // Populate the "Add New Document" section
+                documentNameInput.value = doc.name;
+                documentContentInput.value = doc.content;
+                aiDocumentActionSelect.value = 'none'; // Reset AI action for editing
+
+                // Populate category and subcategory
+                const categoryObj = categories.find(cat => cat.name === doc.category);
+                if (categoryObj) {
+                    documentCategorySelect.value = categoryObj.id;
+                    // Trigger change to populate subcategories
+                    const event = new Event('change');
+                    documentCategorySelect.dispatchEvent(event);
+
+                    const subcategoryObj = categoryObj.subcategories.find(sub => sub.name === doc.subcategory);
+                    if (subcategoryObj) {
+                        documentSubcategorySelect.value = subcategoryObj.id;
+                    } else {
+                        documentSubcategorySelect.value = ''; // Reset subcategory if not found
+                    }
+                } else {
+                    documentCategorySelect.value = ''; // Reset category if not found
+                    documentSubcategorySelect.innerHTML = '<option value="">Sélectionner une sous-catégorie</option>';
+                    documentSubcategorySelect.disabled = true;
+                }
+
+                // Set editing state
+                editingDocumentId = docId;
+                addDocumentBtn.textContent = '💾 Enregistrer les modifications';
+                showAlert(`Vous modifiez le document "${doc.name}".`, 'Modification', 'info');
+
+                // Scroll to the add/edit section
+                documentNameInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+
         // NEW: Load marked.js for Markdown parsing
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
@@ -2576,6 +3069,8 @@ Question de l'apprenant : "${userMessage}"`;
                 breaks: true, 
                 sanitize: true 
             });
+            // Initialiser l'application après le chargement de marked.js
+            loadApiKeyFromLocalStorage(); // Charger la clé API en premier
             window.onload = loadDocuments; 
         };
         document.head.appendChild(script);
@@ -2583,6 +3078,8 @@ Question de l'apprenant : "${userMessage}"`;
         // Fallback if marked.js fails to load
         if (!window.marked) {
             console.warn("marked.js failed to load, Markdown rendering will not be available.");
+            // Initialiser l'application même si marked.js ne charge pas
+            loadApiKeyFromLocalStorage(); // Charger la clé API en premier
             window.onload = loadDocuments; 
         }
 
