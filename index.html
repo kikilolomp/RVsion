@@ -51,7 +51,11 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 1000; /* Base z-index for all overlays */
+        }
+        /* Specific z-index for the confirm modal to always be on top */
+        #confirmModal {
+            z-index: 1050; /* Higher than other modals */
         }
         .modal-content {
             background-color: #ffffff;
@@ -1922,7 +1926,7 @@ Contexte ou instructions supplémentaires : ${additionalContext || 'Aucun'}
                     submitQuizBtn.classList.remove('hidden');
                     nextQuestionBtn.classList.add('hidden');
                 }
-                showAlert('Quiz démarré/repris ! Bonne chance.', 'Quiz En Cours', 'info');
+                showAlert('Quiz démarré/repris ! Bon conrage.', 'Quiz En Cours', 'info');
             }
         });
 
@@ -2428,19 +2432,38 @@ Votre réponse doit être structurée comme follows en utilisant des sections cl
 
             try {
                 const documentContent = doc.content;
-                // Construct the prompt using the entire chat history for context
-                let currentChatHistory = doc.aiChatHistory.map(msg => ({
-                    role: msg.role === 'ai' ? 'model' : msg.role, // FIX: Map 'ai' role to 'model' for API
-                    parts: [{ text: msg.text }]
-                }));
+                
+                // Instructions de base pour l'IA, toujours incluses
+                const basePromptInstructions = `En tant qu'assistant pédagogique, votre rôle est de répondre de manière claire, concise et utile.
+Votre priorité est le contenu du cours ci-dessous. Si la réponse ne s'y trouve pas clairement, vous pouvez compléter avec vos connaissances générales.
+**Citez toujours vos sources :** Pour les informations du cours, indiquez "(Source: Cours)". Pour les informations externes, indiquez "(Source: [Titre de la source](URL))" ou "(Source: Connaissances générales de l'IA)".
 
-                // Ensure the initial system prompt is sent with the first user message only
-                // This structure is fine as is, since the 'initialPrompt' becomes part of the
-                // first user message's text, and subsequent turns just alternate user/model roles.
-                // The main fix is ensuring all 'ai' roles from `doc.aiChatHistory` are converted to 'model'
-                // when sending to the Gemini API.
+---
+Contenu du cours sur lequel se baser en priorité :
+${documentContent}
+---
 
-                const payload = { contents: currentChatHistory }; 
+`;
+
+                // Construire l'historique du chat pour l'API
+                let contentsForApi = [];
+                for (const msg of doc.aiChatHistory) {
+                    if (msg.role === 'user') {
+                        // Préfixer les messages utilisateur avec les instructions et le contenu du document
+                        contentsForApi.push({
+                            role: 'user',
+                            parts: [{ text: `${basePromptInstructions}\n\n${msg.text}` }]
+                        });
+                    } else {
+                        // Les messages de l'IA/modèle sont ajoutés tels quels (après mappage du rôle)
+                        contentsForApi.push({
+                            role: 'model', // Le rôle doit être 'model' pour Gemini API
+                            parts: [{ text: msg.text }]
+                        });
+                    }
+                }
+
+                const payload = { contents: contentsForApi }; 
 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
@@ -3003,7 +3026,11 @@ Votre réponse doit être structurée comme follows en utilisant des sections cl
             const flashcardToDelete = doc.flashcards.find(fc => fc.id === flashcardId);
 
             if (flashcardToDelete) {
+                // Ensure the confirm modal is visible before proceeding
+                manageFlashcardsModal.classList.add('hidden'); // Temporarily hide the management modal
                 const confirmed = await showConfirm(`Êtes-vous sûr de vouloir supprimer cette flashcard ?`, 'Confirmer la suppression');
+                manageFlashcardsModal.classList.remove('hidden'); // Show the management modal again
+
                 if (confirmed) {
                     doc.flashcards = doc.flashcards.filter(fc => fc.id !== flashcardId);
                     saveDocuments();
